@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Greyhawk Calendar</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f0f0f0;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .calendar {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+        }
+
+        .display {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            margin: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+        }
+
+        .button-table {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .button-table table {
+            border-collapse: collapse;
+        }
+
+        .button-table td {
+            padding: 0.5rem;
+            width: 200px;
+            text-align: center;
+        }
+
+        .button-table td:first-child {
+            text-align: right;
+        }
+
+        .button-table td:last-child {
+            text-align: left;
+        }
+
+        .moon-phase-table {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .moon-phase-table table {
+            border-collapse: collapse;
+        }
+
+        .moon-phase-table th:first-child {
+            text-align: right;
+            padding: 0.5rem;
+            width: 200px;
+        }
+
+        .moon-phase-table td:first-child {
+            text-align: right;
+            padding: 0.5rem;
+            width: 200px;
+        }
+
+        .moon-phase-table th:last-child {
+            text-align: left;
+            padding: 0.5rem;
+            width: 200px;
+        }
+
+        .moon-phase-table td:last-child {
+            text-align: left;
+            padding: 0.5rem;
+            width: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="calendar">
+        <h1>Greyhawk Calendar</h1>
+        <div class="display" id="current-date"></div>
+        <!--div class="display" id="moon-phases"></div-->
+        <div class="moon-phase-table">
+            <table id="moon-phases"></table>
+        </div>
+        <div class="button-table">
+            <table>
+                <tr>
+                    <td> <button onclick="changeYears(-1)">&lt;&lt; Previous Year</button> </td>
+                    <td> <button onclick="changeYears(1)">Next Year &gt;&gt;</button> </td>
+                </tr>
+                <tr>
+                    <td> <button onclick="changeMonths(-1)">&lt; Previous Month</button> </td>
+                    <td> <button onclick="changeMonths(1)">Next Month &gt;</button> </td>
+                </tr>
+                <tr>
+                    <td> <button onclick="changeDays(-1)">&lt; Previous Day</button> </td>
+                    <td> <button onclick="changeDays(1)">Next Day &gt;</button> </td>
+                </tr>
+                <tr>
+                    <td> <button onclick="changeHours(-1)">&lt; Previous Hour</button> </td>
+                    <td> <button onclick="changeHours(1)">Next Hour &gt;</button> </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const months = [
+            'Fireseek', 'Readying', 'Coldeven', 'Planting', 'Flocktime', 'Wealsun',
+            'Reaping', 'Goodmonth', 'Harvester', 'Patchwall', 'Ready&rsquo;reat', 'Sunsebb'
+        ];
+        const festivals = {
+            0: 'Needfest',       // Before Fireseek
+            84: 'Growfest',      // Between Coldeven and Planting
+            168: 'Richfest',     // Between Wealsun and Reaping
+            252: 'Brewfest'      // Between Harvester and Patchwall
+        };
+
+        const daysPerMonth = 28;
+        const totalDays = 360;
+        const festivalOffsets = Object.keys(festivals).map(Number);
+
+        let currentDay = 0; // total day count since CY 576
+        let currentHour = 12;
+        let currentYear = 576;
+
+        const lunaCycle = 28;
+        const celeneCycle = 91;
+        const moonPhases = ["New", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full", "Waning Gibbous", "Last Quarter", "Waning Crescent"];
+
+        function getMoonPhase(day, cycleLength) {
+            const phaseIndex = Math.floor((day % cycleLength + cycleLength) % cycleLength / (cycleLength / moonPhases.length));
+            return moonPhases[phaseIndex];
+        }
+
+        function getCalendarDate(dayOffset) {
+            const dayInYear = (dayOffset % totalDays + totalDays) % totalDays;
+            if (festivalOffsets.includes(dayInYear)) {
+                return festivals[dayInYear];
+            }
+
+            let adjustedDay = dayInYear;
+            let extraDays = 0;
+            for (let offset of festivalOffsets) {
+                if (adjustedDay > offset) extraDays++;
+            }
+            adjustedDay -= extraDays;
+
+            let monthIndex = Math.floor(adjustedDay / daysPerMonth);
+            let dayInMonth = (adjustedDay % daysPerMonth) + 1;
+
+            if (monthIndex >= 0 && monthIndex < months.length) {
+                return `${dayInMonth} ${months[monthIndex]}`;
+            } else {
+                return 'Unknown';
+            }
+        }
+
+        function updateDisplay() {
+            const dayInYear = (currentDay % totalDays + totalDays) % totalDays;
+            const year = currentYear + Math.floor(currentDay / totalDays);
+            const dateStr = getCalendarDate(currentDay);
+            const hourStr = `${(currentHour + 24) % 24}:00`;
+            document.getElementById('current-date').innerHTML = `${dateStr}, CY ${year}, ${hourStr}`;
+
+            const luna = getMoonPhase(currentDay, lunaCycle);
+            const celene = getMoonPhase(currentDay, celeneCycle);
+            // document.getElementById('moon-phases').textContent = `Luna: ${luna} | Celene: ${celene}`;
+            document.getElementById('moon-phases').innerHTML = `<tr><th>Luna</th><th>Celene</th></tr><tr><td>${luna}</td><td>${celene}</td></tr>`;
+        }
+
+        function changeDays(delta) {
+            currentDay += delta;
+            updateDisplay();
+        }
+
+        function changeHours(delta) {
+            currentHour += delta;
+            while (currentHour < 0) {
+                currentHour += 24;
+                changeDays(-1);
+            }
+            while (currentHour >= 24) {
+                currentHour -= 24;
+                changeDays(1);
+            }
+            updateDisplay();
+        }
+
+        function changeMonths(delta) {
+            currentDay += delta * daysPerMonth;
+            updateDisplay();
+        }
+
+        function changeYears(delta) {
+            currentDay += delta * totalDays;
+            updateDisplay();
+        }
+
+        updateDisplay();
+    </script>
+</body>
+
+</html>
