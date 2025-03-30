@@ -24,68 +24,35 @@
             margin-bottom: 1rem;
         }
 
+        .datetime-group {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .datetime-field {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .controls button {
+            padding: 0.25rem 0.5rem;
+            font-size: 1rem;
+        }
+
         button {
             margin: 0.5rem;
             padding: 0.5rem 1rem;
             font-size: 1rem;
-        }
-
-        .button-table {
-            display: flex;
-            justify-content: center;
-            margin: 1rem 0;
-        }
-
-        .button-table table {
-            border-collapse: collapse;
-        }
-
-        .button-table td {
-            padding: 0.5rem;
-            width: 200px;
-            text-align: center;
-        }
-
-        .button-table td:first-child {
-            text-align: right;
-        }
-
-        .button-table td:last-child {
-            text-align: left;
-        }
-
-        .moon-phase-table {
-            display: flex;
-            justify-content: center;
-            margin: 1rem 0;
-        }
-
-        .moon-phase-table table {
-            border-collapse: collapse;
-        }
-
-        .moon-phase-table th:first-child {
-            text-align: right;
-            padding: 0.5rem;
-            width: 200px;
-        }
-
-        .moon-phase-table td:first-child {
-            text-align: right;
-            padding: 0.5rem;
-            width: 200px;
-        }
-
-        .moon-phase-table th:last-child {
-            text-align: left;
-            padding: 0.5rem;
-            width: 200px;
-        }
-
-        .moon-phase-table td:last-child {
-            text-align: left;
-            padding: 0.5rem;
-            width: 200px;
         }
     </style>
 </head>
@@ -93,31 +60,44 @@
 <body>
     <div class="calendar">
         <h1>Greyhawk Calendar</h1>
-        <div class="display" id="current-date"></div>
-        <!--div class="display" id="moon-phases"></div-->
+        <div class="datetime-group">
+            <div class="datetime-field">
+                <div class="label">Year</div>
+                <div class="controls">
+                    <button onclick="changeYears(1)">&#9650;</button>
+                    <div id="display-year"></div>
+                    <button onclick="changeYears(-1)">&#9660;</button>
+                </div>
+            </div>
+            <div class="datetime-field">
+                <div class="label">Month</div>
+                <div class="controls">
+                    <button onclick="changeMonths(1)">&#9650;</button>
+                    <div id="display-month"></div>
+                    <button onclick="changeMonths(-1)">&#9660;</button>
+                </div>
+            </div>
+            <div class="datetime-field">
+                <div class="label">Day</div>
+                <div class="controls">
+                    <button onclick="changeDays(1)">&#9650;</button>
+                    <div id="display-day"></div>
+                    <button onclick="changeDays(-1)">&#9660;</button>
+                </div>
+            </div>
+            <div class="datetime-field">
+                <div class="label">Hour</div>
+                <div class="controls">
+                    <button onclick="changeHours(1)">&#9650;</button>
+                    <div id="display-hour"></div>
+                    <button onclick="changeHours(-1)">&#9660;</button>
+                </div>
+            </div>
+        </div>
         <div class="moon-phase-table">
             <table id="moon-phases"></table>
         </div>
-        <div class="button-table">
-            <table>
-                <tr>
-                    <td> <button onclick="changeYears(-1)">&lt;&lt; Previous Year</button> </td>
-                    <td> <button onclick="changeYears(1)">Next Year &gt;&gt;</button> </td>
-                </tr>
-                <tr>
-                    <td> <button onclick="changeMonths(-1)">&lt; Previous Month</button> </td>
-                    <td> <button onclick="changeMonths(1)">Next Month &gt;</button> </td>
-                </tr>
-                <tr>
-                    <td> <button onclick="changeDays(-1)">&lt; Previous Day</button> </td>
-                    <td> <button onclick="changeDays(1)">Next Day &gt;</button> </td>
-                </tr>
-                <tr>
-                    <td> <button onclick="changeHours(-1)">&lt; Previous Hour</button> </td>
-                    <td> <button onclick="changeHours(1)">Next Hour &gt;</button> </td>
-                </tr>
-            </table>
-        </div>
+        <div class="display" id="weather-info"></div>
     </div>
 
     <script>
@@ -125,6 +105,22 @@
             'Fireseek', 'Readying', 'Coldeven', 'Planting', 'Flocktime', 'Wealsun',
             'Reaping', 'Goodmonth', 'Harvester', 'Patchwall', 'Ready&rsquo;reat', 'Sunsebb'
         ];
+        const monthWeather = {
+            'Fireseek': { base: 32, high: 'd10', low: 'd20', precip: 46, sky: [23, 50], sunrise: '7:21', sunset: '5:01' },
+            'Readying': { base: 34, high: 'd6+4', low: 'd10+4', precip: 40, sky: [25, 50], sunrise: '6:55', sunset: '5:36' },
+            'Coldeven': { base: 42, high: 'd8+4', low: 'd10+4', precip: 44, sky: [27, 54], sunrise: '6:12', sunset: '6:09' },
+            'Planting': { base: 52, high: 'd10+6', low: 'd8+4', precip: 42, sky: [20, 55], sunrise: '5:24', sunset: '6:39' },
+            'Flocktime': { base: 63, high: 'd10+6', low: 'd10+6', precip: 42, sky: [20, 53], sunrise: '4:45', sunset: '7:10' },
+            'Wealsun': { base: 71, high: 'd8+8', low: 'd6', precip: 36, sky: [20, 60], sunrise: '4:32', sunset: '7:32' },
+            'Reaping': { base: 77, high: 'd6+4', low: 'd6+6', precip: 33, sky: [22, 62], sunrise: '4:45', sunset: '7:29' },
+            'Goodmonth': { base: 75, high: 'd4+6', low: 'd6+6', precip: 33, sky: [25, 60], sunrise: '5:13', sunset: '6:57' },
+            'Harvester': { base: 68, high: 'd8+6', low: 'd8+6', precip: 33, sky: [33, 55], sunrise: '5:42', sunset: '6:10' },
+            'Patchwall': { base: 57, high: 'd10+5', low: 'd10+5', precip: 36, sky: [35, 60], sunrise: '6:12', sunset: '5:21' },
+            'Ready&rsquo;reat': { base: 46, high: 'd10+4', low: 'd10+4', precip: 40, sky: [20, 50], sunrise: '6:46', sunset: '4:45' },
+            'Sunsebb': { base: 33, high: 'd8+5', low: 'd20', precip: 43, sky: [25, 50], sunrise: '7:19', sunset: '4:36' }
+        };
+
+
         const festivals = {
             0: 'Needfest',       // Before Fireseek
             84: 'Growfest',      // Between Coldeven and Planting
@@ -139,6 +135,19 @@
         let currentDay = 0; // total day count since CY 576
         let currentHour = 12;
         let currentYear = 576;
+
+        let weatherState = {
+            day: null,
+            temp: null,
+            high: null,
+            low: null,
+            skyRoll: null,
+            sky: null,
+            precipRoll: null,
+            hasPrecip: false,
+            precipType: "None"
+        };
+
 
         const lunaCycle = 28;
         const celeneCycle = 91;
@@ -171,18 +180,258 @@
                 return 'Unknown';
             }
         }
+        function getSkyCondition(roll, thresholds) {
+            const [clearMax, partlyMax] = thresholds;
+            if (roll <= clearMax) return "Clear";
+            if (roll <= partlyMax) return "Partly Cloudy";
+            return "Cloudy";
+        }
+
+
+        function getPrecipitationType(tempF) {
+            const precipitationTypes = [
+                {
+                    range: [1, 2],
+                    type: "Blizzard, heavy",
+                    min: null,
+                    max: 10,
+                    continuation: "60%",
+                    rainbowChance: "0%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [3, 5],
+                    type: "Blizzard",
+                    min: null,
+                    max: 20,
+                    continuation: "50%",
+                    rainbowChance: "0%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [6, 10],
+                    type: "Snowstorm, heavy",
+                    min: null,
+                    max: 25,
+                    continuation: "45%",
+                    rainbowChance: "0%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [11, 20],
+                    type: "Snowstorm, light",
+                    min: null,
+                    max: 35,
+                    continuation: "40%",
+                    rainbowChance: "0%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [21, 25],
+                    type: "Sleet storm",
+                    min: null,
+                    max: 35,
+                    continuation: "35%",
+                    rainbowChance: "0%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [26, 27],
+                    type: "Hailstorm",
+                    min: null,
+                    max: 65,
+                    continuation: "20%",
+                    rainbowChance: "2%",
+                    notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+                },
+                {
+                    range: [28, 30],
+                    type: "Fog, heavy",
+                    min: 20,
+                    max: 60,
+                    continuation: "25%",
+                    rainbowChance: "0%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [31, 38],
+                    type: "Fog, light",
+                    min: 30,
+                    max: 70,
+                    continuation: "25%",
+                    rainbowChance: "0%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [39, 40],
+                    type: "Mist",
+                    min: 30,
+                    max: null,
+                    continuation: "15%",
+                    rainbowChance: "5%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [41, 45],
+                    type: "Drizzle",
+                    min: 25,
+                    max: null,
+                    continuation: "30%",
+                    rainbowChance: "10%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [46, 60],
+                    type: "Rainstorm, light",
+                    min: 25,
+                    max: null,
+                    continuation: "35%",
+                    rainbowChance: "15%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [61, 70],
+                    type: "Rainstorm, heavy",
+                    min: 25,
+                    max: null,
+                    continuation: "35%",
+                    rainbowChance: "20%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [71, 84],
+                    type: "Thunderstorm",
+                    min: 40,
+                    max: null,
+                    continuation: "35%",
+                    rainbowChance: "25%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [85, 89],
+                    type: "Tropical storm",
+                    min: 55,
+                    max: null,
+                    continuation: "30%",
+                    rainbowChance: "15%",
+                    notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+                },
+                {
+                    range: [90, 94],
+                    type: "Monsoon",
+                    min: 40,
+                    max: null,
+                    continuation: "40%",
+                    rainbowChance: "25%",
+                    notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+                },
+                {
+                    range: [95, 97],
+                    type: "Gale",
+                    min: 55,
+                    max: null,
+                    continuation: "30%",
+                    rainbowChance: "5%",
+                    notAllowedIn: []
+                },
+                {
+                    range: [98, 99],
+                    type: "Hurricane or typhoon",
+                    min: null,
+                    max: null,
+                    continuation: "15%",
+                    rainbowChance: "0%",
+                    notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+                },
+                {
+                    range: [100, 100],
+                    type: "Special",
+                    min: null,
+                    max: null,
+                    continuation: "—",
+                    rainbowChance: "—",
+                    notAllowedIn: []
+                }
+            ];
+
+
+            const roll = rollDice("d100");
+            for (const entry of precipitationTypes) {
+                const [minRoll, maxRoll] = entry.range;
+                if (roll >= minRoll && roll <= maxRoll) {
+                    if ((entry.min === null || tempF >= entry.min) &&
+                        (entry.max === null || tempF <= entry.max)) {
+                        return `${entry.type}`;
+                    }
+                }
+            }
+            return `None`;
+        }
+
 
         function updateDisplay() {
             const dayInYear = (currentDay % totalDays + totalDays) % totalDays;
             const year = currentYear + Math.floor(currentDay / totalDays);
             const dateStr = getCalendarDate(currentDay);
             const hourStr = `${(currentHour + 24) % 24}:00`;
-            document.getElementById('current-date').innerHTML = `${dateStr}, CY ${year}, ${hourStr}`;
+
+            let day = '';
+            let month = '';
+            if (dateStr.includes(' ')) {
+                [day, month] = dateStr.split(' ');
+            } else {
+                month = dateStr;
+            }
+
+            document.getElementById('display-day').textContent = day;
+            document.getElementById('display-month').textContent = month;
+            document.getElementById('display-year').textContent = `CY ${year}`;
+            document.getElementById('display-hour').textContent = hourStr;
 
             const luna = getMoonPhase(currentDay, lunaCycle);
             const celene = getMoonPhase(currentDay, celeneCycle);
-            // document.getElementById('moon-phases').textContent = `Luna: ${luna} | Celene: ${celene}`;
             document.getElementById('moon-phases').innerHTML = `<tr><th>Luna</th><th>Celene</th></tr><tr><td>${luna}</td><td>${celene}</td></tr>`;
+
+
+            if (monthWeather[month]) {
+                const w = monthWeather[month];
+                const currentDayOfYear = (currentDay % totalDays + totalDays) % totalDays;
+                const isNewDay = weatherState.day !== currentDayOfYear;
+
+                if (isNewDay) {
+                    // Set new day in weatherState
+                    weatherState.day = currentDayOfYear;
+
+                    // Roll new weather values
+                    weatherState.high = w.base + rollDice(w.high);
+                    weatherState.low = w.base - rollDice(w.low);
+                    weatherState.temp = (weatherState.high + weatherState.low) / 2;
+
+                    weatherState.skyRoll = rollDice("d100");
+                    weatherState.sky = getSkyCondition(weatherState.skyRoll, w.sky);
+
+                    weatherState.precipRoll = rollDice("d100");
+                    weatherState.hasPrecip = weatherState.precipRoll <= w.precip && weatherState.sky === "Cloudy";
+
+                    weatherState.precipType = "None";
+                    if (weatherState.hasPrecip) {
+                        weatherState.precipType = getPrecipitationType(w.base);
+                    }
+                }
+
+                // Optionally apply continuation logic here later if you want intra-day adjustments
+
+                document.getElementById('weather-info').innerHTML = `
+                    <strong>Weather for ${month}</strong><br>
+                    Temp: High: ${weatherState.high}, Low: ${weatherState.low}<br>
+                    Precipitation: ${weatherState.precipType}<br>
+                    Sky: ${weatherState.sky}<br>
+                    Sunrise: ${w.sunrise} AM, Sunset: ${w.sunset} PM
+                `;
+            } else {
+                document.getElementById('weather-info').textContent = 'Weather data not available.';
+            }
+
         }
 
         function changeDays(delta) {
@@ -211,6 +460,14 @@
         function changeYears(delta) {
             currentDay += delta * totalDays;
             updateDisplay();
+        }
+
+        function rollDice(expr) {
+            const match = expr.match(/d(\d+)([+-]\d+)?/);
+            if (!match) return 0;
+            const sides = parseInt(match[1]);
+            const bonus = match[2] ? parseInt(match[2]) : 0;
+            return Math.floor(Math.random() * sides) + 1 + bonus;
         }
 
         updateDisplay();
