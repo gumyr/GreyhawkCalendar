@@ -54,6 +54,66 @@
             padding: 0.5rem 1rem;
             font-size: 1rem;
         }
+
+        .date-part {
+            font-size: 1.5rem;
+            font-weight: bold;
+            /* padding: 0.25rem 0.5rem; */
+            /* background-color: #f8f8f8; */
+            /* border: 1px solid #ccc; */
+            /* border-radius: 0.25rem; */
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .moon-phase-table table {
+            width: auto;
+            margin: 0 auto;
+        }
+
+        /* .moon-phase-table th,
+        .moon-phase-table td {
+            text-align: center;
+            vertical-align: middle;
+        } */
+
+        .moon-phase-table td {
+            width: 120px;
+            /* adjust as needed */
+            padding: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .moon-phase-table img {
+            display: block;
+            margin: 0 auto 0.25rem;
+            width: 48px;
+            /* or whatever consistent size you prefer */
+            height: auto;
+        }
+
+        .moon-cell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* centers the whole block vertically */
+            align-items: center;
+            /* centers content horizontally */
+            height: 100px;
+            /* or however tall you want each cell */
+        }
+
+        .moon-cell img {
+            width: 48px;
+            height: auto;
+            flex-shrink: 0;
+        }
+
+        .moon-label {
+            margin-top: auto;
+            /* pushes text to bottom of moon-cell */
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 
@@ -65,7 +125,7 @@
                 <div class="label">Year</div>
                 <div class="controls">
                     <button onclick="changeYears(1)">&#9650;</button>
-                    <div id="display-year"></div>
+                    <div id="display-year" class="date-part"></div>
                     <button onclick="changeYears(-1)">&#9660;</button>
                 </div>
             </div>
@@ -73,7 +133,7 @@
                 <div class="label">Month</div>
                 <div class="controls">
                     <button onclick="changeMonths(1)">&#9650;</button>
-                    <div id="display-month"></div>
+                    <div id="display-month" class="date-part"></div>
                     <button onclick="changeMonths(-1)">&#9660;</button>
                 </div>
             </div>
@@ -81,7 +141,7 @@
                 <div class="label">Day</div>
                 <div class="controls">
                     <button onclick="changeDays(1)">&#9650;</button>
-                    <div id="display-day"></div>
+                    <div id="display-day" class="date-part"></div>
                     <button onclick="changeDays(-1)">&#9660;</button>
                 </div>
             </div>
@@ -89,7 +149,7 @@
                 <div class="label">Hour</div>
                 <div class="controls">
                     <button onclick="changeHours(1)">&#9650;</button>
-                    <div id="display-hour"></div>
+                    <div id="display-hour" class="date-part"></div>
                     <button onclick="changeHours(-1)">&#9660;</button>
                 </div>
             </div>
@@ -128,6 +188,16 @@
             252: 'Brewfest'      // Between Harvester and Patchwall
         };
 
+        const moonPhaseImages = {
+            "New": "moon-new.svg",
+            "Waxing Crescent": "moon-waxing-crescent.svg",
+            "First Quarter": "moon-first-quarter.svg",
+            "Waxing Gibbous": "moon-waxing-gibbous.svg",
+            "Full": "moon-full.svg",
+            "Waning Gibbous": "moon-waning-gibbous.svg",
+            "Last Quarter": "moon-last-quarter.svg",
+            "Waning Crescent": "moon-waning-crescent.svg"
+        };
         const daysPerMonth = 28;
         const totalDays = 360;
         const festivalOffsets = Object.keys(festivals).map(Number);
@@ -145,7 +215,8 @@
             sky: null,
             precipRoll: null,
             hasPrecip: false,
-            precipType: "None"
+            precipType: "None",
+            lastSkyUpdateHour: null,
         };
 
 
@@ -385,13 +456,24 @@
 
             document.getElementById('display-day').textContent = day;
             document.getElementById('display-month').textContent = month;
-            document.getElementById('display-year').textContent = `CY ${year}`;
+            document.getElementById('display-year').textContent = year;
             document.getElementById('display-hour').textContent = hourStr;
 
             const luna = getMoonPhase(currentDay, lunaCycle);
             const celene = getMoonPhase(currentDay, celeneCycle);
-            document.getElementById('moon-phases').innerHTML = `<tr><th>Luna</th><th>Celene</th></tr><tr><td>${luna}</td><td>${celene}</td></tr>`;
-
+            document.getElementById('moon-phases').innerHTML = `
+                <tr><th>Luna</th><th>Celene</th></tr>
+                <tr>
+                    <td>
+                        <img src="images/moons/${moonPhaseImages[luna]}" alt="${luna}" title="${luna}" width="48"><br>
+                        <div class="moon-label">${luna}</div>
+                    </td>
+                    <td>
+                        <img src="images/moons/${moonPhaseImages[celene]}" alt="${celene}" title="${celene}" width="48"><br>
+                        <div class="moon-label">${celene}</div>
+                    </td>
+                </tr>
+                `;
 
             if (monthWeather[month]) {
                 const w = monthWeather[month];
@@ -399,6 +481,19 @@
                 const isNewDay = weatherState.day !== currentDayOfYear;
 
                 if (isNewDay) {
+                    const hourNow = (currentHour + 24) % 24;
+
+                    // Only drift the sky if it's the same day, and at least 1 hour has passed since last update
+                    if (!isNewDay && weatherState.lastSkyUpdateHour !== hourNow) {
+                        // Chance to drift sky: 30%
+                        if (Math.random() < 0.3) {
+                            const delta = rollDice("d6") - 3; // range -2 to +3
+                            weatherState.skyRoll = Math.max(1, Math.min(100, weatherState.skyRoll + delta));
+                            weatherState.sky = getSkyCondition(weatherState.skyRoll, w.sky);
+                        }
+
+                        weatherState.lastSkyUpdateHour = hourNow;
+                    }
                     // Set new day in weatherState
                     weatherState.day = currentDayOfYear;
 
@@ -418,8 +513,6 @@
                         weatherState.precipType = getPrecipitationType(w.base);
                     }
                 }
-
-                // Optionally apply continuation logic here later if you want intra-day adjustments
 
                 document.getElementById('weather-info').innerHTML = `
                     <strong>Weather for ${month}</strong><br>
