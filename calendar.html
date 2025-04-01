@@ -158,6 +158,12 @@
             <table id="moon-phases"></table>
         </div>
         <div class="display" id="weather-info"></div>
+        <div class="save-load-controls">
+            <button id="btn-save-state">Save</button>
+            <button id="btn-load-state">Load</button>
+            <input type="file" id="file-input" style="display:none;" />
+        </div>
+
     </div>
 
     <script>
@@ -632,20 +638,6 @@
             button.addEventListener('touchend', stop);
         }
 
-
-        // function enableHoldToRepeat(button, callback, delay = 300, repeatRate = 100) {
-        //     let interval;
-        //     button.addEventListener('mousedown', () => {
-        //         callback(); // immediate action
-        //         interval = setTimeout(() => {
-        //             interval = setInterval(callback, repeatRate);
-        //         }, delay);
-        //     });
-        //     button.addEventListener('mouseup', () => clearInterval(interval));
-        //     button.addEventListener('mouseleave', () => clearInterval(interval));
-        //     button.addEventListener('touchend', () => clearInterval(interval));
-        // }
-
         function changeHours(delta) {
             currentDay += delta / 24;
             updateDisplay();
@@ -686,6 +678,42 @@
             const bonus = match[2] ? parseInt(match[2]) : 0;
             return Math.floor(Math.random() * sides) + 1 + bonus;
         }
+        function saveStateToFile() {
+            const data = {
+                currentDay,
+                weatherState
+            };
+
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            const timestamp = new Date().toISOString().slice(0, 10); // e.g., "2025-03-30"
+            a.download = `greyhawk-calendar-${timestamp}.json`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+        function loadStateFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (typeof data.currentDay === "number" && typeof data.weatherState === "object") {
+                        currentDay = data.currentDay;
+                        weatherState = data.weatherState;
+                        updateDisplay();
+                    } else {
+                        alert("Invalid file format.");
+                    }
+                } catch (e) {
+                    alert("Failed to parse file.");
+                }
+            };
+            reader.readAsText(file);
+        }
 
         updateDisplay();
 
@@ -701,6 +729,20 @@
 
             enableHoldToRepeat(document.getElementById('btn-year-up'), () => changeYears(1));
             enableHoldToRepeat(document.getElementById('btn-year-down'), () => changeYears(-1));
+
+            document.getElementById("btn-save-state").addEventListener("click", saveStateToFile);
+
+            document.getElementById("btn-load-state").addEventListener("click", () => {
+                document.getElementById("file-input").click();
+            });
+
+            document.getElementById("file-input").addEventListener("change", (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    loadStateFromFile(file);
+                }
+            });
+
         });
 
     </script>
