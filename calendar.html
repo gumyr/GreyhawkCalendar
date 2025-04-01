@@ -46,13 +46,13 @@
 
         .controls button {
             padding: 0.25rem 0.5rem;
-            font-size: 1rem;
+            font-size: 0.5rem;
         }
 
         button {
             margin: 0.5rem;
             padding: 0.5rem 1rem;
-            font-size: 1rem;
+            font-size: 0.5rem;
         }
 
         .date-part {
@@ -161,10 +161,10 @@
     </div>
 
     <script>
-        const months = [
-            'Fireseek', 'Readying', 'Coldeven', 'Planting', 'Flocktime', 'Wealsun',
-            'Reaping', 'Goodmonth', 'Harvester', 'Patchwall', 'Ready&rsquo;reat', 'Sunsebb'
-        ];
+        // const months = [
+        //     'Fireseek', 'Readying', 'Coldeven', 'Planting', 'Flocktime', 'Wealsun',
+        //     'Reaping', 'Goodmonth', 'Harvester', 'Patchwall', 'Ready’reat', 'Sunsebb'
+        // ];
         const monthWeather = {
             'Fireseek': { base: 32, high: 'd10', low: 'd20', precip: 46, sky: [23, 50], sunrise: '7:21', sunset: '5:01' },
             'Readying': { base: 34, high: 'd6+4', low: 'd10+4', precip: 40, sky: [25, 50], sunrise: '6:55', sunset: '5:36' },
@@ -176,17 +176,40 @@
             'Goodmonth': { base: 75, high: 'd4+6', low: 'd6+6', precip: 33, sky: [25, 60], sunrise: '5:13', sunset: '6:57' },
             'Harvester': { base: 68, high: 'd8+6', low: 'd8+6', precip: 33, sky: [33, 55], sunrise: '5:42', sunset: '6:10' },
             'Patchwall': { base: 57, high: 'd10+5', low: 'd10+5', precip: 36, sky: [35, 60], sunrise: '6:12', sunset: '5:21' },
-            'Ready&rsquo;reat': { base: 46, high: 'd10+4', low: 'd10+4', precip: 40, sky: [20, 50], sunrise: '6:46', sunset: '4:45' },
+            'Ready’reat': { base: 46, high: 'd10+4', low: 'd10+4', precip: 40, sky: [20, 50], sunrise: '6:46', sunset: '4:45' },
             'Sunsebb': { base: 33, high: 'd8+5', low: 'd20', precip: 43, sky: [25, 50], sunrise: '7:19', sunset: '4:36' }
         };
+        const calendarStructure = [
+            { name: "Needfest", days: 6 },
+            { name: "Fireseek", days: 28 },
+            { name: "Readying", days: 28 },
+            { name: "Coldeven", days: 28 },
+            { name: "Growfest", days: 6 },
+            { name: "Planting", days: 28 },
+            { name: "Flocktime", days: 28 },
+            { name: "Wealsun", days: 28 },
+            { name: "Richfest", days: 6 },
+            { name: "Reaping", days: 28 },
+            { name: "Goodmonth", days: 28 },
+            { name: "Harvester", days: 28 },
+            { name: "Brewfest", days: 6 },
+            { name: "Patchwall", days: 28 },
+            { name: "Ready’reat", days: 28 },
+            { name: "Sunsebb", days: 28 }
+        ];
 
 
-        const festivals = {
-            0: 'Needfest',       // Before Fireseek
-            84: 'Growfest',      // Between Coldeven and Planting
-            168: 'Richfest',     // Between Wealsun and Reaping
-            252: 'Brewfest'      // Between Harvester and Patchwall
-        };
+        const dayToMonth = []; // index: 0–359 → { name, day }
+
+        (function generateDayMapping() {
+            let dayOfYear = 0;
+            for (const entry of calendarStructure) {
+                for (let i = 1; i <= entry.days; i++) {
+                    dayToMonth.push({ name: entry.name, day: i });
+                    dayOfYear++;
+                }
+            }
+        })();
 
         const moonPhaseImages = {
             "New": "moon-new.svg",
@@ -200,7 +223,6 @@
         };
         const daysPerMonth = 28;
         const totalDays = 360;
-        const festivalOffsets = Object.keys(festivals).map(Number);
 
         let currentDay = 0; // total day count since CY 576
         let currentHour = 12;
@@ -229,28 +251,13 @@
             return moonPhases[phaseIndex];
         }
 
+
         function getCalendarDate(dayOffset) {
-            const dayInYear = (dayOffset % totalDays + totalDays) % totalDays;
-            if (festivalOffsets.includes(dayInYear)) {
-                return festivals[dayInYear];
-            }
-
-            let adjustedDay = dayInYear;
-            let extraDays = 0;
-            for (let offset of festivalOffsets) {
-                if (adjustedDay > offset) extraDays++;
-            }
-            adjustedDay -= extraDays;
-
-            let monthIndex = Math.floor(adjustedDay / daysPerMonth);
-            let dayInMonth = (adjustedDay % daysPerMonth) + 1;
-
-            if (monthIndex >= 0 && monthIndex < months.length) {
-                return `${dayInMonth} ${months[monthIndex]}`;
-            } else {
-                return 'Unknown';
-            }
+            const dayInYear = (dayOffset % 360 + 360) % 360;
+            const entry = dayToMonth[dayInYear];
+            return `${entry.day} ${entry.name}`;
         }
+
         function getSkyCondition(roll, thresholds) {
             const [clearMax, partlyMax] = thresholds;
             if (roll <= clearMax) return "Clear";
@@ -258,7 +265,52 @@
             return "Cloudy";
         }
 
+        function getBaseTemperature(day) {
+            // Rough sine wave over the year (coldest at day 1/360, warmest ~180)
+            return 50 + 25 * Math.sin((2 * Math.PI * (day - 80)) / 360);
+        }
 
+        function getPrecipChance(day) {
+            const x = day;
+            return Math.round(
+                -1.50463e-10 * Math.pow(x, 5) +
+                1.26005e-6 * Math.pow(x, 4) -
+                0.0000352364 * Math.pow(x, 3) +
+                0.00393427 * Math.pow(x, 2) -
+                0.202342 * x +
+                47.45312
+            );
+        }
+        function getSkyDistribution(day) {
+            const clear = 20 + 15 * Math.sin((2 * Math.PI * (day + 30) / 360));
+            const partly = 40;
+            const cloudy = 100 - (clear + partly);
+            return [Math.round(clear), Math.round(clear + partly)];
+        }
+
+        function getSolarDeclination(day) {
+            return -23.44 * Math.cos((2 * Math.PI / 360) * (day + 10));
+        }
+
+        function getDaylightHours(day, latitude = 45) {
+            const rad = Math.PI / 180;
+            const phi = latitude * rad;
+            const delta = getSolarDeclination(day) * rad;
+
+            const cosH = -Math.tan(phi) * Math.tan(delta);
+            const H = Math.acos(Math.min(Math.max(cosH, -1), 1)); // Clamp to avoid NaNs
+
+            const daylightHours = (2 * H * 180 / Math.PI) / 15; // convert radians to hours
+            return daylightHours;
+        }
+
+        function getSunrise(day) {
+            return (12 - getDaylightHours(day) / 2).toFixed(2);
+        }
+
+        function getSunset(day) {
+            return (12 + getDaylightHours(day) / 2).toFixed(2);
+        }
         function getPrecipitationType(tempF) {
             const precipitationTypes = [
                 {
@@ -441,21 +493,25 @@
 
 
         function updateDisplay() {
-            const dayInYear = (currentDay % totalDays + totalDays) % totalDays;
+            const weekdays = ["Starday", "Sunday", "Moonday", "Godsday", "Waterday", "Earthday", "Freeday"];
             const year = currentYear + Math.floor(currentDay / totalDays);
             const dateStr = getCalendarDate(currentDay);
             const hourStr = `${(currentHour + 24) % 24}:00`;
+            const weekdayName = weekdays[(currentDay % 7 + 7) % 7];
+            const currentDayOfYear = (currentDay % totalDays + totalDays) % totalDays;
+            const isNewDay = weatherState.day !== currentDayOfYear;
+            const hourNow = (currentHour + 24) % 24;
 
-            let day = '';
-            let month = '';
-            if (dateStr.includes(' ')) {
-                [day, month] = dateStr.split(' ');
-            } else {
-                month = dateStr;
-            }
+            const baseTemp = Math.round(getBaseTemperature(currentDayOfYear));
+            const highDelta = rollDice("d10") + 6;
+            const lowDelta = rollDice("d8") + 4;
+            const high = baseTemp + highDelta;
+            const low = baseTemp - lowDelta;
 
-            document.getElementById('display-day').textContent = day;
-            document.getElementById('display-month').textContent = month;
+            const { name: displayMonth, day: displayDay } = dayToMonth[currentDayOfYear];
+
+            document.getElementById('display-day').textContent = displayDay;
+            document.getElementById('display-month').textContent = displayMonth;
             document.getElementById('display-year').textContent = year;
             document.getElementById('display-hour').textContent = hourStr;
 
@@ -475,56 +531,54 @@
                 </tr>
                 `;
 
-            if (monthWeather[month]) {
-                const w = monthWeather[month];
-                const currentDayOfYear = (currentDay % totalDays + totalDays) % totalDays;
-                const isNewDay = weatherState.day !== currentDayOfYear;
+            const precipChance = getPrecipChance(currentDayOfYear); // You’ll define this
+            const skyTable = getSkyDistribution(currentDayOfYear);  // You’ll define this
 
-                if (isNewDay) {
-                    const hourNow = (currentHour + 24) % 24;
 
-                    // Only drift the sky if it's the same day, and at least 1 hour has passed since last update
-                    if (!isNewDay && weatherState.lastSkyUpdateHour !== hourNow) {
-                        // Chance to drift sky: 30%
-                        if (Math.random() < 0.3) {
-                            const delta = rollDice("d6") - 3; // range -2 to +3
-                            weatherState.skyRoll = Math.max(1, Math.min(100, weatherState.skyRoll + delta));
-                            weatherState.sky = getSkyCondition(weatherState.skyRoll, w.sky);
-                        }
+            const sunrise = getSunrise(currentDayOfYear);
+            const sunset = getSunset(currentDayOfYear);
 
-                        weatherState.lastSkyUpdateHour = hourNow;
-                    }
-                    // Set new day in weatherState
-                    weatherState.day = currentDayOfYear;
+            if (isNewDay) {
+                weatherState.day = currentDayOfYear;
 
-                    // Roll new weather values
-                    weatherState.high = w.base + rollDice(w.high);
-                    weatherState.low = w.base - rollDice(w.low);
-                    weatherState.temp = (weatherState.high + weatherState.low) / 2;
+                const base = getBaseTemperature(currentDayOfYear);
+                const highAdj = rollDice("d10") + 6;
+                const lowAdj = rollDice("d8") + 4;
 
-                    weatherState.skyRoll = rollDice("d100");
-                    weatherState.sky = getSkyCondition(weatherState.skyRoll, w.sky);
+                weatherState.high = Math.round(base + highAdj);
+                weatherState.low = Math.round(base - lowAdj);
+                weatherState.temp = Math.round((weatherState.high + weatherState.low) / 2);
 
-                    weatherState.precipRoll = rollDice("d100");
-                    weatherState.hasPrecip = weatherState.precipRoll <= w.precip && weatherState.sky === "Cloudy";
+                const skyDist = getSkyDistribution(currentDayOfYear);
+                weatherState.skyRoll = rollDice("d100");
+                weatherState.sky = getSkyCondition(weatherState.skyRoll, skyDist);
 
-                    weatherState.precipType = "None";
-                    if (weatherState.hasPrecip) {
-                        weatherState.precipType = getPrecipitationType(w.base);
-                    }
-                }
+                weatherState.precipRoll = rollDice("d100");
+                weatherState.hasPrecip = weatherState.precipRoll <= getPrecipChance(currentDayOfYear) && weatherState.sky === "Cloudy";
 
-                document.getElementById('weather-info').innerHTML = `
-                    <strong>Weather for ${month}</strong><br>
-                    Temp: High: ${weatherState.high}, Low: ${weatherState.low}<br>
-                    Precipitation: ${weatherState.precipType}<br>
-                    Sky: ${weatherState.sky}<br>
-                    Sunrise: ${w.sunrise} AM, Sunset: ${w.sunset} PM
-                `;
-            } else {
-                document.getElementById('weather-info').textContent = 'Weather data not available.';
+                weatherState.precipType = weatherState.hasPrecip
+                    ? getPrecipitationType(base)
+                    : "None";
             }
 
+            // Drift sky hourly
+            if (!isNewDay && weatherState.lastSkyUpdateHour !== hourNow) {
+                if (Math.random() < 0.3) {
+                    const delta = rollDice("d6") - 3;
+                    weatherState.skyRoll = Math.max(1, Math.min(100, weatherState.skyRoll + delta));
+                    weatherState.sky = getSkyCondition(weatherState.skyRoll, getSkyDistribution(currentDayOfYear));
+                }
+                weatherState.lastSkyUpdateHour = hourNow;
+            }
+
+            // Display
+            document.getElementById('weather-info').innerHTML = `
+                <strong>Weather for ${weekdayName}</strong><br>
+                Temp: High: ${weatherState.high}, Low: ${weatherState.low}<br>
+                Precipitation: ${weatherState.precipType}<br>
+                Sky: ${weatherState.sky}<br>
+                Sunrise: ${sunrise}, Sunset: ${sunset}
+            `;
         }
 
         function changeDays(delta) {
@@ -544,12 +598,42 @@
             }
             updateDisplay();
         }
-
+        function getMonthIndex(dayInYear) {
+            let dayCount = 0;
+            for (let i = 0; i < calendarStructure.length; i++) {
+                const monthLength = calendarStructure[i].days;
+                if (dayInYear < dayCount + monthLength) {
+                    return i;
+                }
+                dayCount += monthLength;
+            }
+            return calendarStructure.length - 1; // fallback
+        }
         function changeMonths(delta) {
-            currentDay += delta * daysPerMonth;
+            const dayInYear = (currentDay % totalDays + totalDays) % totalDays;
+            const currentMonth = getMonthIndex(dayInYear);
+            const currentOffset = dayInYear - calendarStructure
+                .slice(0, currentMonth)
+                .reduce((a, m) => a + m.days, 0);
+
+            let newMonth = currentMonth + delta;
+            if (newMonth < 0) {
+                newMonth += calendarStructure.length;
+                currentYear -= 1;
+            } else if (newMonth >= calendarStructure.length) {
+                newMonth -= calendarStructure.length;
+                currentYear += 1;
+            }
+
+            const newMonthStart = calendarStructure
+                .slice(0, newMonth)
+                .reduce((a, m) => a + m.days, 0);
+
+            const newOffset = Math.min(currentOffset, calendarStructure[newMonth].days - 1);
+            currentDay = (currentYear - 576) * totalDays + newMonthStart + newOffset;
+
             updateDisplay();
         }
-
         function changeYears(delta) {
             currentDay += delta * totalDays;
             updateDisplay();
