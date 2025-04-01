@@ -158,6 +158,7 @@
             <table id="moon-phases"></table>
         </div>
         <div class="display" id="weather-info"></div>
+        <div class="display" id="tide-info"></div>
         <div class="save-load-controls">
             <button id="btn-save-state">Save</button>
             <button id="btn-load-state">Load</button>
@@ -479,6 +480,47 @@
         function getSunset(day) {
             return (12 + getDaylightHours(day) / 2).toFixed(2);
         }
+
+        //
+        // Tides
+        //
+        function getTideHeight(time) {
+            const lastKingTide = 888 // random offset
+            const sunBase = Math.sin(2 * Math.PI * time - lastKingTide)
+            const lunaBase = Math.sin(2 * (28 - 1) / 28 * Math.PI * time - lastKingTide)
+            const celeneBase = Math.sin(2 * (91 - 1) / 91 * Math.PI * time - lastKingTide)
+
+            const strength = lunaBase + celeneBase / 2 + sunBase / 4;
+            return strength * 5; // → –8.75ft to +8.75ft
+        }
+
+        function getTideInfo(currentDay) {
+            const currentHeight = getTideHeight(currentDay);
+            const step = 1 / 96; // 15 minutes
+            const endTime = currentDay + 1; // look ahead 1 day
+
+            let max = { time: currentDay, height: currentHeight };
+            let min = { time: currentDay, height: currentHeight };
+
+            for (let t = currentDay + step; t <= endTime; t += step) {
+                const h = getTideHeight(t);
+                if (h > max.height) {
+                    max = { time: t, height: h };
+                }
+                if (h < min.height) {
+                    min = { time: t, height: h };
+                }
+            }
+
+            return {
+                now: { time: currentDay, height: currentHeight },
+                nextHigh: max,
+                nextLow: min
+            };
+        }
+
+
+
         function getPrecipitationType(tempF) {
             const maxAttempts = 100;
             for (let i = 0; i < maxAttempts; i++) {
@@ -557,7 +599,6 @@
         }
 
         function updateDisplay() {
-            updateWeather();
             const weekdays = ["Starday", "Sunday", "Moonday", "Godsday", "Waterday", "Earthday", "Freeday"];
             const year = 576 + Math.floor(currentDay / totalDays);
             const weekdayName = weekdays[(Math.floor(currentDay) % 7 + 7) % 7];
@@ -574,6 +615,7 @@
             document.getElementById('display-year').textContent = year;
             document.getElementById('display-hour').textContent = hourStr;
 
+            // Display Moon State
             const luna = getMoonPhase(currentDay, lunaCycle);
             const celene = getMoonPhase(currentDay, celeneCycle);
             document.getElementById('moon-phases').innerHTML = `
@@ -590,16 +632,26 @@
                 </tr>
                 `;
 
+
+            // Display Weather - Sunrise/Sunset
+            updateWeather();
             const sunrise = getSunrise(currentDayOfYear);
             const sunset = getSunset(currentDayOfYear);
-
-            // Display
             document.getElementById('weather-info').innerHTML = `
                 <strong>Weather for ${weekdayName}</strong><br>
                 Temp: High: ${weatherState.high}, Low: ${weatherState.low}<br>
                 Precipitation: ${weatherState.precipType}<br>
                 Sky: ${weatherState.sky}<br>
                 Sunrise: ${formatHour(sunrise)}, Sunset: ${formatHour(sunset)}            
+            `;
+
+            // Display Tides
+            const tide = getTideInfo(currentDay);
+
+            document.getElementById('tide-info').innerHTML = `
+                Tide Height: ${tide.now.height.toFixed(2)} ft<br>
+                Next High Tide: ${formatHour((tide.nextHigh.time % 1) * 24)} (${tide.nextHigh.height.toFixed(2)} ft)<br>
+                Next Low Tide: ${formatHour((tide.nextLow.time % 1) * 24)} (${tide.nextLow.height.toFixed(2)} ft)
             `;
         }
 
