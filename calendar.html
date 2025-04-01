@@ -124,33 +124,33 @@
             <div class="datetime-field">
                 <div class="label">Year</div>
                 <div class="controls">
-                    <button onclick="changeYears(1)">&#9650;</button>
+                    <button id="btn-year-up">▲</button>
                     <div id="display-year" class="date-part"></div>
-                    <button onclick="changeYears(-1)">&#9660;</button>
+                    <button id="btn-year-down">▼</button>
                 </div>
             </div>
             <div class="datetime-field">
                 <div class="label">Month</div>
                 <div class="controls">
-                    <button onclick="changeMonths(1)">&#9650;</button>
+                    <button id="btn-month-up">▲</button>
                     <div id="display-month" class="date-part"></div>
-                    <button onclick="changeMonths(-1)">&#9660;</button>
+                    <button id="btn-month-down">▼</button>
                 </div>
             </div>
             <div class="datetime-field">
                 <div class="label">Day</div>
                 <div class="controls">
-                    <button onclick="changeDays(1)">&#9650;</button>
+                    <button id="btn-day-up">▲</button>
                     <div id="display-day" class="date-part"></div>
-                    <button onclick="changeDays(-1)">&#9660;</button>
+                    <button id="btn-day-down">▼</button>
                 </div>
             </div>
             <div class="datetime-field">
                 <div class="label">Hour</div>
                 <div class="controls">
-                    <button onclick="changeHours(1)">&#9650;</button>
+                    <button id="btn-hour-up">▲</button>
                     <div id="display-hour" class="date-part"></div>
-                    <button onclick="changeHours(-1)">&#9660;</button>
+                    <button id="btn-hour-down">▼</button>
                 </div>
             </div>
         </div>
@@ -217,26 +217,192 @@
             "Last Quarter": "moon-last-quarter.svg",
             "Waning Crescent": "moon-waning-crescent.svg"
         };
+
+        const precipitationTypes = [
+            {
+                range: [1, 2],
+                type: "Blizzard, heavy",
+                min: null,
+                max: 10,
+                continuation: "60%",
+                rainbowChance: "0%",
+                notAllowedIn: []
+            },
+            {
+                range: [3, 5],
+                type: "Blizzard",
+                min: null,
+                max: 20,
+                continuation: "50%",
+                rainbowChance: "0%",
+                notAllowedIn: []
+            },
+            {
+                range: [6, 10],
+                type: "Snowstorm, heavy",
+                min: null,
+                max: 25,
+                continuation: "45%",
+                rainbowChance: "0%",
+                notAllowedIn: []
+            },
+            {
+                range: [11, 20],
+                type: "Snowstorm, light",
+                min: null,
+                max: 35,
+                continuation: "40%",
+                rainbowChance: "0%",
+                notAllowedIn: []
+            },
+            {
+                range: [21, 25],
+                type: "Sleet storm",
+                min: null,
+                max: 35,
+                continuation: "35%",
+                rainbowChance: "0%",
+                notAllowedIn: []
+            },
+            {
+                range: [26, 27],
+                type: "Hailstorm",
+                min: null,
+                max: 65,
+                continuation: "20%",
+                rainbowChance: "2%",
+                notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+            },
+            {
+                range: [28, 30],
+                type: "Fog, heavy",
+                min: 20,
+                max: 60,
+                continuation: "25%",
+                rainbowChance: "0%",
+                notAllowedIn: []
+            },
+            {
+                range: [31, 38],
+                type: "Fog, light",
+                min: 30,
+                max: 70,
+                continuation: "25%",
+                rainbowChance: "0%",
+                notAllowedIn: []
+            },
+            {
+                range: [39, 40],
+                type: "Mist",
+                min: 30,
+                max: null,
+                continuation: "15%",
+                rainbowChance: "5%",
+                notAllowedIn: []
+            },
+            {
+                range: [41, 45],
+                type: "Drizzle",
+                min: 25,
+                max: null,
+                continuation: "30%",
+                rainbowChance: "10%",
+                notAllowedIn: []
+            },
+            {
+                range: [46, 60],
+                type: "Rainstorm, light",
+                min: 25,
+                max: null,
+                continuation: "35%",
+                rainbowChance: "15%",
+                notAllowedIn: []
+            },
+            {
+                range: [61, 70],
+                type: "Rainstorm, heavy",
+                min: 25,
+                max: null,
+                continuation: "35%",
+                rainbowChance: "20%",
+                notAllowedIn: []
+            },
+            {
+                range: [71, 84],
+                type: "Thunderstorm",
+                min: 40,
+                max: null,
+                continuation: "35%",
+                rainbowChance: "25%",
+                notAllowedIn: []
+            },
+            {
+                range: [85, 89],
+                type: "Tropical storm",
+                min: 55,
+                max: null,
+                continuation: "30%",
+                rainbowChance: "15%",
+                notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+            },
+            {
+                range: [90, 94],
+                type: "Monsoon",
+                min: 40,
+                max: null,
+                continuation: "40%",
+                rainbowChance: "25%",
+                notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+            },
+            {
+                range: [95, 97],
+                type: "Gale",
+                min: 55,
+                max: null,
+                continuation: "30%",
+                rainbowChance: "5%",
+                notAllowedIn: []
+            },
+            {
+                range: [98, 99],
+                type: "Hurricane or typhoon",
+                min: null,
+                max: null,
+                continuation: "15%",
+                rainbowChance: "0%",
+                notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+            },
+            {
+                range: [100, 100],
+                type: "Special",
+                min: null,
+                max: null,
+                continuation: "—",
+                rainbowChance: "—",
+                notAllowedIn: []
+            }
+        ];
+
         const daysPerMonth = 28;
         const totalDays = 360;
 
-        let currentDay = 0; // total day count since CY 576
+        let currentDay = 0.0; // total day count since CY 576
         let currentHour = 12;
         let currentYear = 576;
 
         let weatherState = {
-            day: null,
-            temp: null,
+            lastUpdateTime: null,
+            timeToChangeWeather: 0.0,
+            continuation: null,
             high: null,
             low: null,
-            skyRoll: null,
+            temp: null,
             sky: null,
+            skyRoll: null,
             precipRoll: null,
             hasPrecip: false,
-            precipType: "None",
-            lastSkyUpdateHour: null,
+            precipType: "None"
         };
-
 
         const lunaCycle = 28;
         const celeneCycle = 91;
@@ -249,7 +415,7 @@
 
 
         function getCalendarDate(dayOffset) {
-            const dayInYear = (dayOffset % 360 + 360) % 360;
+            const dayInYear = (Math.floor(dayOffset) % 360 + 360) % 360;
             const entry = dayToMonth[dayInYear];
             return `${entry.day} ${entry.name}`;
         }
@@ -308,170 +474,6 @@
             return (12 + getDaylightHours(day) / 2).toFixed(2);
         }
         function getPrecipitationType(tempF) {
-            const precipitationTypes = [
-                {
-                    range: [1, 2],
-                    type: "Blizzard, heavy",
-                    min: null,
-                    max: 10,
-                    continuation: "60%",
-                    rainbowChance: "0%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [3, 5],
-                    type: "Blizzard",
-                    min: null,
-                    max: 20,
-                    continuation: "50%",
-                    rainbowChance: "0%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [6, 10],
-                    type: "Snowstorm, heavy",
-                    min: null,
-                    max: 25,
-                    continuation: "45%",
-                    rainbowChance: "0%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [11, 20],
-                    type: "Snowstorm, light",
-                    min: null,
-                    max: 35,
-                    continuation: "40%",
-                    rainbowChance: "0%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [21, 25],
-                    type: "Sleet storm",
-                    min: null,
-                    max: 35,
-                    continuation: "35%",
-                    rainbowChance: "0%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [26, 27],
-                    type: "Hailstorm",
-                    min: null,
-                    max: 65,
-                    continuation: "20%",
-                    rainbowChance: "2%",
-                    notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
-                },
-                {
-                    range: [28, 30],
-                    type: "Fog, heavy",
-                    min: 20,
-                    max: 60,
-                    continuation: "25%",
-                    rainbowChance: "0%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [31, 38],
-                    type: "Fog, light",
-                    min: 30,
-                    max: 70,
-                    continuation: "25%",
-                    rainbowChance: "0%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [39, 40],
-                    type: "Mist",
-                    min: 30,
-                    max: null,
-                    continuation: "15%",
-                    rainbowChance: "5%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [41, 45],
-                    type: "Drizzle",
-                    min: 25,
-                    max: null,
-                    continuation: "30%",
-                    rainbowChance: "10%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [46, 60],
-                    type: "Rainstorm, light",
-                    min: 25,
-                    max: null,
-                    continuation: "35%",
-                    rainbowChance: "15%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [61, 70],
-                    type: "Rainstorm, heavy",
-                    min: 25,
-                    max: null,
-                    continuation: "35%",
-                    rainbowChance: "20%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [71, 84],
-                    type: "Thunderstorm",
-                    min: 40,
-                    max: null,
-                    continuation: "35%",
-                    rainbowChance: "25%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [85, 89],
-                    type: "Tropical storm",
-                    min: 55,
-                    max: null,
-                    continuation: "30%",
-                    rainbowChance: "15%",
-                    notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
-                },
-                {
-                    range: [90, 94],
-                    type: "Monsoon",
-                    min: 40,
-                    max: null,
-                    continuation: "40%",
-                    rainbowChance: "25%",
-                    notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
-                },
-                {
-                    range: [95, 97],
-                    type: "Gale",
-                    min: 55,
-                    max: null,
-                    continuation: "30%",
-                    rainbowChance: "5%",
-                    notAllowedIn: []
-                },
-                {
-                    range: [98, 99],
-                    type: "Hurricane or typhoon",
-                    min: null,
-                    max: null,
-                    continuation: "15%",
-                    rainbowChance: "0%",
-                    notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
-                },
-                {
-                    range: [100, 100],
-                    type: "Special",
-                    min: null,
-                    max: null,
-                    continuation: "—",
-                    rainbowChance: "—",
-                    notAllowedIn: []
-                }
-            ];
             const maxAttempts = 100;
             for (let i = 0; i < maxAttempts; i++) {
                 const roll = rollDice("d100");
@@ -480,7 +482,9 @@
                     if (roll >= minRoll && roll <= maxRoll) {
                         const tempOk = (entry.min === null || tempF >= entry.min) &&
                             (entry.max === null || tempF <= entry.max);
-                        const monthOk = !entry.notAllowedIn || !entry.notAllowedIn.includes(dayToMonth[currentDay % 360].name);
+                        const currentDayOfYear = (Math.floor(currentDay) % 360 + 360) % 360;
+
+                        const monthOk = !entry.notAllowedIn || !entry.notAllowedIn.includes(dayToMonth[currentDayOfYear].name);
                         if (tempOk && monthOk) {
                             return `${entry.type}`;
                         }
@@ -491,23 +495,73 @@
         }
 
 
-        function updateDisplay() {
-            const weekdays = ["Starday", "Sunday", "Moonday", "Godsday", "Waterday", "Earthday", "Freeday"];
-            const year = currentYear + Math.floor(currentDay / totalDays);
-            const dateStr = getCalendarDate(currentDay);
-            const hourStr = `${(currentHour + 24) % 24}:00`;
-            const weekdayName = weekdays[(currentDay % 7 + 7) % 7];
-            const currentDayOfYear = (currentDay % totalDays + totalDays) % totalDays;
-            const isNewDay = weatherState.day !== currentDayOfYear;
-            const hourNow = (currentHour + 24) % 24;
+        function formatHour(decimalHour) {
+            const totalMinutes = Math.round(decimalHour * 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            const padded = minutes.toString().padStart(2, '0');
+            return `${hours}:${padded}`;
+        }
+        function updateWeather() {
+            const currentTime = currentDay;
+            const dayOfYear = (Math.floor(currentTime) % totalDays + totalDays) % totalDays;
 
-            const baseTemp = Math.round(getBaseTemperature(currentDayOfYear));
-            const highDelta = rollDice("d10") + 6;
-            const lowDelta = rollDice("d8") + 4;
-            const high = baseTemp + highDelta;
-            const low = baseTemp - lowDelta;
+            if (currentTime >= weatherState.timeToChangeWeather) {
+                // Check continuation first
+                if (weatherState.hasPrecip && weatherState.continuation) {
+                    const roll = rollDice("d100");
+                    if (roll <= parseInt(weatherState.continuation)) {
+                        // Weather continues
+                        weatherState.timeToChangeWeather = currentTime + rollDice("d4") / 24; // 1–4 hours
+                        return;
+                    }
+                }
+
+                // Generate new weather
+                const base = getBaseTemperature(dayOfYear);
+                const highAdj = rollDice("d10") + 6;
+                const lowAdj = rollDice("d8") + 4;
+
+                weatherState.high = Math.round(base + highAdj);
+                weatherState.low = Math.round(base - lowAdj);
+                weatherState.temp = Math.round((weatherState.high + weatherState.low) / 2);
+
+                const skyDist = getSkyDistribution(dayOfYear);
+                weatherState.skyRoll = rollDice("d100");
+                weatherState.sky = getSkyCondition(weatherState.skyRoll, skyDist);
+
+                weatherState.precipRoll = rollDice("d100");
+                weatherState.hasPrecip = weatherState.precipRoll <= getPrecipChance(dayOfYear) && weatherState.sky === "Cloudy";
+
+                if (weatherState.hasPrecip) {
+                    const type = getPrecipitationType(base);
+                    weatherState.precipType = type;
+
+                    // Look up continuation value from type
+                    const entry = precipitationTypes.find(e => e.type === type);
+                    weatherState.continuation = entry?.continuation || "0%";
+                } else {
+                    weatherState.precipType = "None";
+                    weatherState.continuation = "0%";
+                }
+
+                weatherState.timeToChangeWeather = currentTime + rollDice("d6") / 2; // 0.5–3 hours
+                weatherState.lastUpdateTime = currentTime;
+            }
+        }
+
+        function updateDisplay() {
+            updateWeather();
+            const weekdays = ["Starday", "Sunday", "Moonday", "Godsday", "Waterday", "Earthday", "Freeday"];
+            const year = 576 + Math.floor(currentDay / totalDays);
+            const weekdayName = weekdays[(Math.floor(currentDay) % 7 + 7) % 7];
+            const currentDayOfYear = (Math.floor(currentDay) % 360 + 360) % 360;
 
             const { name: displayMonth, day: displayDay } = dayToMonth[currentDayOfYear];
+
+
+            const hour = Math.floor((currentDay % 1 + 1) % 1 * 24);
+            const hourStr = `${hour}:00`;
 
             document.getElementById('display-day').textContent = displayDay;
             document.getElementById('display-month').textContent = displayMonth;
@@ -530,45 +584,8 @@
                 </tr>
                 `;
 
-            const precipChance = getPrecipChance(currentDayOfYear); // You’ll define this
-            const skyTable = getSkyDistribution(currentDayOfYear);  // You’ll define this
-
-
             const sunrise = getSunrise(currentDayOfYear);
             const sunset = getSunset(currentDayOfYear);
-
-            if (isNewDay) {
-                weatherState.day = currentDayOfYear;
-
-                const base = getBaseTemperature(currentDayOfYear);
-                const highAdj = rollDice("d10") + 6;
-                const lowAdj = rollDice("d8") + 4;
-
-                weatherState.high = Math.round(base + highAdj);
-                weatherState.low = Math.round(base - lowAdj);
-                weatherState.temp = Math.round((weatherState.high + weatherState.low) / 2);
-
-                const skyDist = getSkyDistribution(currentDayOfYear);
-                weatherState.skyRoll = rollDice("d100");
-                weatherState.sky = getSkyCondition(weatherState.skyRoll, skyDist);
-
-                weatherState.precipRoll = rollDice("d100");
-                weatherState.hasPrecip = weatherState.precipRoll <= getPrecipChance(currentDayOfYear) && weatherState.sky === "Cloudy";
-
-                weatherState.precipType = weatherState.hasPrecip
-                    ? getPrecipitationType(base)
-                    : "None";
-            }
-
-            // Drift sky hourly
-            if (!isNewDay && weatherState.lastSkyUpdateHour !== hourNow) {
-                if (Math.random() < 0.3) {
-                    const delta = rollDice("d6") - 3;
-                    weatherState.skyRoll = Math.max(1, Math.min(100, weatherState.skyRoll + delta));
-                    weatherState.sky = getSkyCondition(weatherState.skyRoll, getSkyDistribution(currentDayOfYear));
-                }
-                weatherState.lastSkyUpdateHour = hourNow;
-            }
 
             // Display
             document.getElementById('weather-info').innerHTML = `
@@ -576,8 +593,62 @@
                 Temp: High: ${weatherState.high}, Low: ${weatherState.low}<br>
                 Precipitation: ${weatherState.precipType}<br>
                 Sky: ${weatherState.sky}<br>
-                Sunrise: ${sunrise}, Sunset: ${sunset}
+                Sunrise: ${formatHour(sunrise)}, Sunset: ${formatHour(sunset)}            
             `;
+        }
+
+        function enableHoldToRepeat(button, callback, initialDelay = 400, repeatRate = 150) {
+            let interval = null;
+            let holdTimeout = null;
+            let startTime = null;
+            let holding = false;
+
+            const start = () => {
+                holding = false;
+                startTime = Date.now();
+                holdTimeout = setTimeout(() => {
+                    holding = true;
+                    interval = setInterval(callback, repeatRate);
+                }, initialDelay);
+            };
+
+            const stop = () => {
+                clearTimeout(holdTimeout);
+                clearInterval(interval);
+
+                const elapsed = Date.now() - startTime;
+
+                // Only treat as a single click if the hold threshold wasn't passed
+                if (elapsed < initialDelay) {
+                    callback();
+                }
+            };
+
+            button.addEventListener('mousedown', start);
+            button.addEventListener('touchstart', start);
+
+            button.addEventListener('mouseup', stop);
+            button.addEventListener('mouseleave', stop);
+            button.addEventListener('touchend', stop);
+        }
+
+
+        // function enableHoldToRepeat(button, callback, delay = 300, repeatRate = 100) {
+        //     let interval;
+        //     button.addEventListener('mousedown', () => {
+        //         callback(); // immediate action
+        //         interval = setTimeout(() => {
+        //             interval = setInterval(callback, repeatRate);
+        //         }, delay);
+        //     });
+        //     button.addEventListener('mouseup', () => clearInterval(interval));
+        //     button.addEventListener('mouseleave', () => clearInterval(interval));
+        //     button.addEventListener('touchend', () => clearInterval(interval));
+        // }
+
+        function changeHours(delta) {
+            currentDay += delta / 24;
+            updateDisplay();
         }
 
         function changeDays(delta) {
@@ -585,16 +656,8 @@
             updateDisplay();
         }
 
-        function changeHours(delta) {
-            currentHour += delta;
-            while (currentHour < 0) {
-                currentHour += 24;
-                changeDays(-1);
-            }
-            while (currentHour >= 24) {
-                currentHour -= 24;
-                changeDays(1);
-            }
+        function changeYears(delta) {
+            currentDay += delta * totalDays;
             updateDisplay();
         }
         function getMonthIndex(dayInYear) {
@@ -609,35 +672,13 @@
             return calendarStructure.length - 1; // fallback
         }
         function changeMonths(delta) {
-            const dayInYear = (currentDay % totalDays + totalDays) % totalDays;
-            const currentMonth = getMonthIndex(dayInYear);
-            const currentOffset = dayInYear - calendarStructure
-                .slice(0, currentMonth)
-                .reduce((a, m) => a + m.days, 0);
+            const dayInYear = (Math.floor(currentDay) % totalDays + totalDays) % totalDays;
+            const currentMonthIndex = getMonthIndex(dayInYear);
+            const daysInCurrentMonth = calendarStructure[currentMonthIndex].days;
 
-            let newMonth = currentMonth + delta;
-            if (newMonth < 0) {
-                newMonth += calendarStructure.length;
-                currentYear -= 1;
-            } else if (newMonth >= calendarStructure.length) {
-                newMonth -= calendarStructure.length;
-                currentYear += 1;
-            }
-
-            const newMonthStart = calendarStructure
-                .slice(0, newMonth)
-                .reduce((a, m) => a + m.days, 0);
-
-            const newOffset = Math.min(currentOffset, calendarStructure[newMonth].days - 1);
-            currentDay = (currentYear - 576) * totalDays + newMonthStart + newOffset;
-
+            currentDay += delta * daysInCurrentMonth;
             updateDisplay();
         }
-        function changeYears(delta) {
-            currentDay += delta * totalDays;
-            updateDisplay();
-        }
-
         function rollDice(expr) {
             const match = expr.match(/d(\d+)([+-]\d+)?/);
             if (!match) return 0;
@@ -647,6 +688,21 @@
         }
 
         updateDisplay();
+
+        window.addEventListener("DOMContentLoaded", () => {
+            enableHoldToRepeat(document.getElementById('btn-hour-up'), () => changeHours(1));
+            enableHoldToRepeat(document.getElementById('btn-hour-down'), () => changeHours(-1));
+
+            enableHoldToRepeat(document.getElementById('btn-day-up'), () => changeDays(1));
+            enableHoldToRepeat(document.getElementById('btn-day-down'), () => changeDays(-1));
+
+            enableHoldToRepeat(document.getElementById('btn-month-up'), () => changeMonths(1));
+            enableHoldToRepeat(document.getElementById('btn-month-down'), () => changeMonths(-1));
+
+            enableHoldToRepeat(document.getElementById('btn-year-up'), () => changeYears(1));
+            enableHoldToRepeat(document.getElementById('btn-year-down'), () => changeYears(-1));
+        });
+
     </script>
 </body>
 
