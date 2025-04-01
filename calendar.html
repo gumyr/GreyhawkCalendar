@@ -161,10 +161,6 @@
     </div>
 
     <script>
-        // const months = [
-        //     'Fireseek', 'Readying', 'Coldeven', 'Planting', 'Flocktime', 'Wealsun',
-        //     'Reaping', 'Goodmonth', 'Harvester', 'Patchwall', 'Ready’reat', 'Sunsebb'
-        // ];
         const monthWeather = {
             'Fireseek': { base: 32, high: 'd10', low: 'd20', precip: 46, sky: [23, 50], sunrise: '7:21', sunset: '5:01' },
             'Readying': { base: 34, high: 'd6+4', low: 'd10+4', precip: 40, sky: [25, 50], sunrise: '6:55', sunset: '5:36' },
@@ -476,19 +472,22 @@
                     notAllowedIn: []
                 }
             ];
-
-
-            const roll = rollDice("d100");
-            for (const entry of precipitationTypes) {
-                const [minRoll, maxRoll] = entry.range;
-                if (roll >= minRoll && roll <= maxRoll) {
-                    if ((entry.min === null || tempF >= entry.min) &&
-                        (entry.max === null || tempF <= entry.max)) {
-                        return `${entry.type}`;
+            const maxAttempts = 100;
+            for (let i = 0; i < maxAttempts; i++) {
+                const roll = rollDice("d100");
+                for (const entry of precipitationTypes) {
+                    const [minRoll, maxRoll] = entry.range;
+                    if (roll >= minRoll && roll <= maxRoll) {
+                        const tempOk = (entry.min === null || tempF >= entry.min) &&
+                            (entry.max === null || tempF <= entry.max);
+                        const monthOk = !entry.notAllowedIn || !entry.notAllowedIn.includes(dayToMonth[currentDay % 360].name);
+                        if (tempOk && monthOk) {
+                            return `${entry.type}`;
+                        }
                     }
                 }
             }
-            return `None`;
+            return "None";
         }
 
 
