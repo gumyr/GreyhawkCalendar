@@ -119,7 +119,7 @@
 
 <body>
     <div class="calendar">
-        <h1>Greyhawk Calendar</h1>
+        <h1 id="calendar-header"></h1>
         <div class="datetime-group">
             <div class="datetime-field">
                 <div class="label">Year</div>
@@ -671,13 +671,7 @@
                     <td>${formatHour(sunset)}</td>
                 </tr>
             `;
-
-            // document.getElementById('weather-info').innerHTML = `
-            //     <strong>Weather for ${weekdayName}</strong><br>
-            //     Temp: High: ${weatherState.high}, Low: ${weatherState.low}<br>
-            //     Precipitation: ${weatherState.precipType}<br>
-            //     Sky: ${weatherState.sky}<br>
-            // `;
+            document.getElementById('calendar-header').textContent = `Greyhawk Calendar – ${weekdayName}`;
             document.getElementById('weather-info').innerHTML = `
                 <tr>
                     <td rowspan=2><img src="images/weather/thermometer.svg"></td>
