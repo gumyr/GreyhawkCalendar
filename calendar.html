@@ -157,8 +157,15 @@
         <div class="moon-phase-table">
             <table id="moon-phases"></table>
         </div>
-        <div class="display" id="weather-info"></div>
-        <div class="display" id="tide-info"></div>
+        <div class="moon-phase-table">
+            <table id="weather-info"></table>
+        </div>
+
+        <!--div class="display" id="weather-info"></div-->
+        <!--div class="display" id="tide-info"></div-->
+        <div class="moon-phase-table">
+            <table id="tide-info"></table>
+        </div>
         <div class="save-load-controls">
             <button id="btn-save-state">Save</button>
             <button id="btn-load-state">Load</button>
@@ -224,6 +231,32 @@
             "Last Quarter": "moon-last-quarter.svg",
             "Waning Crescent": "moon-waning-crescent.svg"
         };
+        const skyConditionImages = {
+            "Clear": "weather-sunny.svg",
+            "Partly Cloudy": "weather-partly-cloudy.svg",
+            "Cloudy": "weather-cloudy.svg"
+        }
+        const precipitationImages = {
+            "Blizzard, heavy": "weather-snowy-heavy.svg",
+            "Blizzard": "weather-snowy.svg",
+            "Snowstorm, heavy": "weather-snowy-heavy.svg",
+            "Snowstorm, light": "weather-snowy.svg",
+            "Sleet storm": "weather-snowy-rainy.svg",
+            "Hailstorm": "weather-hail.svg",
+            "Fog, heavy": "weather-fog.svg",
+            "Fog, light": "weather-fog.svg",
+            "Mist": "weather-fog.svg",
+            "Drizzle": "weather-fog.svg",
+            "Rainstorm, light": "weather-rainy.svg",
+            "Rainstorm, heavy": "weather-pouring.svg",
+            "Thunderstorm": "weather-lightning-rainy.svg",
+            "Tropical storm": "weather-hurricane.svg",
+            "Monsoon": "weather-pouring.svg",
+            "Gale": "weather-lightning.svg",
+            "Hurricane or typhoon": "weather-hurricane.svg",
+            "Special": "weather-special.svg",
+            "None": "weather-none.svg"
+        }
 
         const precipitationTypes = [
             {
@@ -372,7 +405,7 @@
             },
             {
                 range: [98, 99],
-                type: "Hurricane or typhoon",
+                type: "Hurricane",
                 min: null,
                 max: null,
                 continuation: "15%",
@@ -608,7 +641,7 @@
 
 
             const hour = Math.floor((currentDay % 1 + 1) % 1 * 24);
-            const hourStr = `${hour}:00`;
+            const hourStr = `${hour.toString().padStart(2, '0')}:00`;
 
             document.getElementById('display-day').textContent = displayDay;
             document.getElementById('display-month').textContent = displayMonth;
@@ -618,41 +651,51 @@
             // Display Moon State
             const luna = getMoonPhase(currentDay, lunaCycle);
             const celene = getMoonPhase(currentDay, celeneCycle);
-            document.getElementById('moon-phases').innerHTML = `
-                <tr><th>Luna</th><th>Celene</th></tr>
-                <tr>
-                    <td>
-                        <img src="images/moons/${moonPhaseImages[luna]}" alt="${luna}" title="${luna}" width="48"><br>
-                        <div class="moon-label">${luna}</div>
-                    </td>
-                    <td>
-                        <img src="images/moons/${moonPhaseImages[celene]}" alt="${celene}" title="${celene}" width="48"><br>
-                        <div class="moon-label">${celene}</div>
-                    </td>
-                </tr>
-                `;
-
-
             // Display Weather - Sunrise/Sunset
             updateWeather();
             const sunrise = getSunrise(currentDayOfYear);
             const sunset = getSunset(currentDayOfYear);
+
+            document.getElementById('moon-phases').innerHTML = `
+                <tr><th>Luna</th><th>Celene</th><th>Sunrise</th><th>Sunset</th></tr>
+                <tr>
+                    <td><img src="images/moons/${moonPhaseImages[luna]}"></td>
+                    <td><img src="images/moons/${moonPhaseImages[celene]}"></td>
+                    <td><img src="images/sun/sunrise.svg"></td>
+                    <td><img src="images/sun/sunset.svg"></td>
+                </tr>
+                <tr>
+                    <td>${luna}</td>
+                    <td>${celene}</td>
+                    <td>${formatHour(sunrise)}</td>
+                    <td>${formatHour(sunset)}</td>
+                </tr>
+            `;
+
+            // document.getElementById('weather-info').innerHTML = `
+            //     <strong>Weather for ${weekdayName}</strong><br>
+            //     Temp: High: ${weatherState.high}, Low: ${weatherState.low}<br>
+            //     Precipitation: ${weatherState.precipType}<br>
+            //     Sky: ${weatherState.sky}<br>
+            // `;
             document.getElementById('weather-info').innerHTML = `
-                <strong>Weather for ${weekdayName}</strong><br>
-                Temp: High: ${weatherState.high}, Low: ${weatherState.low}<br>
-                Precipitation: ${weatherState.precipType}<br>
-                Sky: ${weatherState.sky}<br>
-                Sunrise: ${formatHour(sunrise)}, Sunset: ${formatHour(sunset)}            
+                <tr>
+                    <td rowspan=2><img src="images/weather/thermometer.svg"></td>
+                    <td>${weatherState.high} ℉</td>
+                    <td><img src="images/weather/${skyConditionImages[weatherState.sky]}"></td>
+                    <td><img src="images/weather/${precipitationImages[weatherState.precipType]}"></td>
+                </tr>
+                <tr></td><td>${weatherState.low} ℉</td><td>${weatherState.sky}</td><td>${weatherState.precipType}</td></tr>
             `;
 
             // Display Tides
             const tide = getTideInfo(currentDay);
-
             document.getElementById('tide-info').innerHTML = `
-                Tide Height: ${tide.now.height.toFixed(2)} ft<br>
-                Next High Tide: ${formatHour((tide.nextHigh.time % 1) * 24)} (${tide.nextHigh.height.toFixed(2)} ft)<br>
-                Next Low Tide: ${formatHour((tide.nextLow.time % 1) * 24)} (${tide.nextLow.height.toFixed(2)} ft)
+                <tr><td><img src="images/tide/tides-moon.svg"></td><td><img src="images/tide/low-tide.svg"></td><td><img src="images/tide/high-tide.svg"></td></tr>
+                <tr><td>Current</td><td>${formatHour((tide.nextLow.time % 1) * 24)}</td><td>${formatHour((tide.nextHigh.time % 1) * 24)}</td></tr>
+                <tr><td>${tide.now.height.toFixed(1)} ft</td><td>${tide.nextLow.height.toFixed(1)} ft</td><td>${tide.nextHigh.height.toFixed(1)} ft</td></tr>
             `;
+
         }
 
         function enableHoldToRepeat(button, callback, initialDelay = 400, repeatRate = 150) {
