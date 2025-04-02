@@ -145,6 +145,35 @@
         h1 {
             margin-bottom: 0.5rem;
         }
+
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-box {
+            display: none;
+            position: absolute;
+            top: 110%;
+            left: 0;
+            background-color: #222;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            width: 260px;
+            font-size: 0.85rem;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .wind-tooltip-content dt {
+            font-weight: bold;
+            margin-top: 6px;
+        }
+
+        .wind-tooltip-content dd {
+            margin: 0 0 4px 0;
+        }
     </style>
 </head>
 
@@ -749,7 +778,59 @@
             }
             return "";
         }
+        const windEffects = [
+            {
+                range: [0, 29],
+                land: "No effect",
+                sea: "No effect",
+                air: "No effect",
+                battle: "No effect"
+            },
+            {
+                range: [30, 44],
+                land: "All travel slowed by 25%, torches will be blown out.",
+                sea: "Sailing difficult; rowing impossible.",
+                air: "Creatures eagle-size and below can't fly.",
+                battle: "Missiles at ½ range and -1 to hit."
+            },
+            {
+                range: [45, 59],
+                land: "All travel slowed by 50%, torches and small fires blown out.",
+                sea: "Minor ship damage (d4 structural points), waves 3d6 ft.",
+                air: "Man-sized creatures cannot fly.",
+                battle: "Missiles at ¼ range and -3 to hit."
+            },
+            {
+                range: [60, 74],
+                land: "Small trees uprooted, travel slowed by 75%, roofs may be torn off.",
+                sea: "Ships endangered (d10 structural damage), waves d10+20 ft.",
+                air: "No creatures can fly, except those from the Elemental Plane of Air.",
+                battle: "No missile fire, -1 to hit with non-magical weapons, dex bonuses to AC canceled."
+            },
+            {
+                range: [75, 200], // upper cap
+                land: "Only strong stone buildings are safe; travel impossible.",
+                sea: "Ships capsized and sunk, wave height d20+20 ft or more.",
+                air: "No creatures can fly (except from the Elemental Plane of Air).",
+                battle: "No missile fire; -3 to hit; 20% chance weapon torn away; dex bonuses to AC canceled."
+            }
+        ];
+        function getWindEffect(speed) {
+            return windEffects.find(e => speed >= e.range[0] && speed <= e.range[1]);
+        }
+        function createWindTooltip(speed) {
+            const e = getWindEffect(speed);
+            if (!e) return '';
 
+            return `
+                    <dl class="wind-tooltip-content">
+                        <dt>🌍 On land</dt><dd>${e.land}</dd>
+                        <dt>🌊 At sea</dt><dd>${e.sea}</dd>
+                        <dt>🌬️ In air</dt><dd>${e.air}</dd>
+                        <dt>⚔️ In battle</dt><dd>${e.battle}</dd>
+                    </dl>
+                `;
+        }
         //
         // Sun Position
         //
@@ -838,8 +919,6 @@
             // Display Moon State
             const luna = getMoonPhase(currentDay, lunaCycle);
             const celene = getMoonPhase(currentDay, celeneCycle);
-            // Display Weather - Sunrise/Sunset
-            updateWeather();
             const sunrise = getSunrise(currentDayOfYear);
             const sunset = getSunset(currentDayOfYear);
 
@@ -858,7 +937,10 @@
                     <td>${formatHour(sunset)}</td>
                 </tr>
             `;
-            // document.getElementById('calendar-header').textContent = `Greyhawk Calendar – ${weekdayName}`;
+
+            // Display Weather - Sunrise/Sunset
+            updateWeather();
+
             document.getElementById('weekday-display').textContent = weekdayName;
             document.getElementById('weather-info').innerHTML = `
                 <tr>
@@ -866,7 +948,12 @@
                     <td class="cell-lower-left">${weatherState.high} ℉</td>
                     <td><img src="images/weather/${skyConditionImages[weatherState.sky]}"></td>
                     <td><img src="images/weather/${precipitationImages[weatherState.precipType]}"></td>
-                    <td><img src="images/weather/weather-windy.svg"></td>
+                    <td>
+                        <div class="tooltip-wrapper" id="wind-icon">
+                            <img src="images/weather/weather-windy.svg">
+                            <div class="tooltip-box" id="wind-tooltip"></div>
+                        </div>
+                    </td>
                 </tr>
                 <tr  class="icon-label-row">
                     <td class="cell-upper-left">${weatherState.low} ℉</td>
@@ -883,6 +970,22 @@
                 <tr><td>Current</td><td>${formatHour((tide.nextLow.time % 1) * 24)}</td><td>${formatHour((tide.nextHigh.time % 1) * 24)}</td></tr>
                 <tr><td>${tide.now.height.toFixed(1)} ft</td><td>${tide.nextLow.height.toFixed(1)} ft</td><td>${tide.nextHigh.height.toFixed(1)} ft</td></tr>
             `;
+
+            // Create Wind tool tip
+            const windIcon = document.getElementById('wind-icon');
+            const windTooltip = document.getElementById('wind-tooltip');
+
+            if (windIcon && windTooltip) {
+                windIcon.addEventListener('mouseenter', () => {
+                    windTooltip.innerHTML = createWindTooltip(weatherState.windSpeed);
+                    windTooltip.style.display = 'block';
+                });
+
+                windIcon.addEventListener('mouseleave', () => {
+                    windTooltip.style.display = 'none';
+                });
+            }
+
 
         }
 
@@ -955,12 +1058,12 @@
             latitudeSlider.addEventListener('input', () => {
                 currentLatitude = parseFloat(latitudeSlider.value);
                 latitudeValue.textContent = `${currentLatitude}°`;
-                updateDisplay(); // or updateWeather(); depending on your flow
+                updateDisplay();
             });
 
-            updateDisplay();
-
         });
+
+        updateDisplay();
 
     </script>
 </body>
