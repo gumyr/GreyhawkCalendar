@@ -7,15 +7,10 @@
     <style>
         body {
             font-family: sans-serif;
-            background: #f0f0f0;
-            padding: 2rem;
             text-align: center;
         }
 
         .calendar {
-            background: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
             display: inline-block;
         }
 
@@ -29,6 +24,7 @@
             justify-content: center;
             gap: 2rem;
             margin-bottom: 1rem;
+            background-color: #ffa6e9;
         }
 
         .datetime-field {
@@ -58,12 +54,12 @@
         .date-part {
             font-size: 1.5rem;
             font-weight: bold;
-            /* padding: 0.25rem 0.5rem; */
-            /* background-color: #f8f8f8; */
-            /* border: 1px solid #ccc; */
-            /* border-radius: 0.25rem; */
             min-width: 80px;
             text-align: center;
+        }
+
+        .calendar-table {
+            border-radius: 6px;
         }
 
         .calendar-table table {
@@ -71,36 +67,66 @@
             margin: 0 auto;
         }
 
-        /* .calendar-table th,
         .calendar-table td {
-            text-align: center;
-            vertical-align: middle;
-        } */
-
-        .calendar-table td {
-            width: 120px;
-            /* adjust as needed */
-            padding: 0.5rem;
-            vertical-align: middle;
+            width: 80px;
         }
 
         .calendar-table img {
             display: block;
-            margin: 0 auto 0.25rem;
-            width: 48px;
-            /* or whatever consistent size you prefer */
-            height: auto;
+            margin: 0 auto 0.05rem;
+            height: 48px;
+        }
+
+        .icon-row td {
+            vertical-align: bottom;
+        }
+
+        .icon-label-row td {
+            vertical-align: top;
+        }
+
+        .cell-middle-right {
+            vertical-align: middle;
+            text-align: right;
+        }
+
+        .cell-upper-left {
+            vertical-align: top;
+            text-align: left;
+        }
+
+        .cell-middle-left {
+            vertical-align: middle;
+            text-align: left;
+        }
+
+        .cell-lower-left {
+            vertical-align: bottom;
+            text-align: left;
+        }
+
+        .datetime-table {
+            background-color: #ffdcdc;
+        }
+
+        .celestial-table {
+            background-color: #f7fbe5;
+        }
+
+        .weather-table {
+            background-color: #cbeee7;
+        }
+
+        .tide-table {
+            background-color: #c6e1e6;
         }
 
         .moon-cell {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            /* centers the whole block vertically */
             align-items: center;
-            /* centers content horizontally */
             height: 100px;
-            /* or however tall you want each cell */
         }
 
         .moon-cell img {
@@ -115,6 +141,10 @@
             margin-bottom: 1rem;
 
         }
+
+        h1 {
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 
@@ -122,48 +152,49 @@
     <div class="calendar">
         <h1>Greyhawk Calendar</h1>
         <div id="weekday-display" class="weekday"></div>
-        <div class="datetime-group">
-            <div class="datetime-field">
-                <div class="label">Year</div>
-                <div class="controls">
-                    <button id="btn-year-up">▲</button>
-                    <div id="display-year" class="date-part"></div>
-                    <button id="btn-year-down">▼</button>
-                </div>
-            </div>
-            <div class="datetime-field">
-                <div class="label">Month</div>
-                <div class="controls">
-                    <button id="btn-month-up">▲</button>
-                    <div id="display-month" class="date-part"></div>
-                    <button id="btn-month-down">▼</button>
-                </div>
-            </div>
-            <div class="datetime-field">
-                <div class="label">Day</div>
-                <div class="controls">
-                    <button id="btn-day-up">▲</button>
-                    <div id="display-day" class="date-part"></div>
-                    <button id="btn-day-down">▼</button>
-                </div>
-            </div>
-            <div class="datetime-field">
-                <div class="label">Hour</div>
-                <div class="controls">
-                    <button id="btn-hour-up">▲</button>
-                    <div id="display-hour" class="date-part"></div>
-                    <button id="btn-hour-down">▼</button>
-                </div>
-            </div>
+        <div class="calendar-table datetime-table">
+            <table>
+                <tr>
+                    <th>Year</th>
+                    <th>Month</th>
+                    <th>Day</th>
+                    <th>Hour</th>
+                </tr>
+                <tr>
+                    <td><button id="btn-year-up">▲</button></td>
+                    <td><button id="btn-month-up">▲</button></td>
+                    <td><button id="btn-day-up">▲</button></td>
+                    <td><button id="btn-hour-up">▲</button></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div id="display-year" class="date-part"></div>
+                    </td>
+                    <td>
+                        <div id="display-month" class="date-part"></div>
+                    </td>
+                    <td>
+                        <div id="display-day" class="date-part"></div>
+                    </td>
+                    <td>
+                        <div id="display-hour" class="date-part"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><button id="btn-year-down">▼</button></td>
+                    <td><button id="btn-month-down">▼</button></td>
+                    <td><button id="btn-day-down">▼</button></td>
+                    <td><button id="btn-hour-down">▼</button></td>
+                </tr>
+            </table>
         </div>
-        <div class="calendar-table">
-            <table id="moon-phases"></table>
+        <div class="calendar-table celestial-table">
+            <table id="celestial-info"></table>
         </div>
-        <div class="calendar-table">
+        <div class="calendar-table weather-table">
             <table id="weather-info"></table>
         </div>
-
-        <div class="calendar-table">
+        <div class="calendar-table tide-table">
             <table id="tide-info"></table>
         </div>
         <label for="latitude-slider">
@@ -201,7 +232,8 @@
             skyRoll: null,
             precipRoll: null,
             hasPrecip: false,
-            precipType: ""
+            precipType: "",
+            windSpeed: null
         };
 
         //
@@ -215,12 +247,22 @@
             return `${hours}:${padded}`;
         }
 
-        function rollDice(expr) {
-            const match = expr.match(/d(\d+)([+-]\d+)?/);
-            if (!match) return 0;
-            const sides = parseInt(match[1]);
-            const bonus = match[2] ? parseInt(match[2]) : 0;
-            return Math.floor(Math.random() * sides) + 1 + bonus;
+        function rollDice(expression) {
+            const match = expression.match(/^(\d*)d(\d+)([+-]\d+)?$/);
+            if (!match) {
+                console.warn(`Invalid dice expression: ${expression}`);
+                return 0;
+            }
+
+            const numDice = parseInt(match[1]) || 1;
+            const dieSides = parseInt(match[2]);
+            const modifier = parseInt(match[3]) || 0;
+
+            let total = 0;
+            for (let i = 0; i < numDice; i++) {
+                total += Math.floor(Math.random() * dieSides) + 1;
+            }
+            return total + modifier;
         }
 
         function saveStateToFile() {
@@ -423,9 +465,11 @@
                     // Look up continuation value from type
                     const entry = precipitationTypes.find(e => e.type === type);
                     weatherState.continuation = entry?.continuation || "0%";
+                    weatherState.windSpeed = entry?.windSpeed ? rollDice(entry.windSpeed) : null;
                 } else {
                     weatherState.precipType = "";
                     weatherState.continuation = "0%";
+                    weatherState.windSpeed = rollDice("d10");
                 }
 
                 weatherState.timeToChangeWeather = currentTime + rollDice("d6") / 2; // 0.5–3 hours
@@ -457,7 +501,8 @@
                 max: 10,
                 continuation: "60%",
                 rainbowChance: "0%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "6d8+40"
             },
             {
                 range: [3, 5],
@@ -466,7 +511,8 @@
                 max: 20,
                 continuation: "50%",
                 rainbowChance: "0%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "3d8+36"
             },
             {
                 range: [6, 10],
@@ -475,7 +521,8 @@
                 max: 25,
                 continuation: "45%",
                 rainbowChance: "0%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "3d10"
             },
             {
                 range: [11, 20],
@@ -484,7 +531,8 @@
                 max: 35,
                 continuation: "40%",
                 rainbowChance: "0%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "4d6"
             },
             {
                 range: [21, 25],
@@ -493,7 +541,8 @@
                 max: 35,
                 continuation: "35%",
                 rainbowChance: "0%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "3d10"
             },
             {
                 range: [26, 27],
@@ -502,7 +551,8 @@
                 max: 65,
                 continuation: "20%",
                 rainbowChance: "2%",
-                notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+                notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"],
+                windSpeed: "4d10"
             },
             {
                 range: [28, 30],
@@ -511,7 +561,8 @@
                 max: 60,
                 continuation: "25%",
                 rainbowChance: "0%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "d20"
             },
             {
                 range: [31, 38],
@@ -520,7 +571,8 @@
                 max: 70,
                 continuation: "25%",
                 rainbowChance: "0%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "d10"
             },
             {
                 range: [39, 40],
@@ -529,7 +581,8 @@
                 max: null,
                 continuation: "15%",
                 rainbowChance: "5%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "d10"
             },
             {
                 range: [41, 45],
@@ -538,7 +591,8 @@
                 max: null,
                 continuation: "30%",
                 rainbowChance: "10%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "d20"
             },
             {
                 range: [46, 60],
@@ -547,7 +601,8 @@
                 max: null,
                 continuation: "35%",
                 rainbowChance: "15%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "d20"
             },
             {
                 range: [61, 70],
@@ -556,7 +611,8 @@
                 max: null,
                 continuation: "35%",
                 rainbowChance: "20%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "2d12+10"
             },
             {
                 range: [71, 84],
@@ -565,7 +621,8 @@
                 max: null,
                 continuation: "35%",
                 rainbowChance: "25%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "4d10"
             },
             {
                 range: [85, 89],
@@ -574,7 +631,8 @@
                 max: null,
                 continuation: "30%",
                 rainbowChance: "15%",
-                notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+                notAllowedIn: ["Needfest", "Fireseek", "Readying", "Coldeven", "Sunsebb"],
+                windSpeed: "3d12+30"
             },
             {
                 range: [90, 94],
@@ -583,7 +641,8 @@
                 max: null,
                 continuation: "40%",
                 rainbowChance: "25%",
-                notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
+                notAllowedIn: ["Needfest", "Fireseek", "Readying", "Coldeven", "Sunsebb"],
+                windSpeed: "6d10"
             },
             {
                 range: [95, 97],
@@ -592,25 +651,27 @@
                 max: null,
                 continuation: "30%",
                 rainbowChance: "5%",
-                notAllowedIn: []
+                notAllowedIn: [],
+                windSpeed: "6d8+40"
             },
             {
-                range: [98, 99],
+                range: [98, 100],
                 type: "Hurricane",
                 min: null,
                 max: null,
                 continuation: "15%",
                 rainbowChance: "0%",
-                notAllowedIn: ["Fireseek", "Readying", "Coldeven", "Sunsebb"]
-            },
-            {
-                range: [100, 100],
-                type: "Special",
-                min: null,
-                max: null,
-                continuation: "—",
-                rainbowChance: "—",
-                notAllowedIn: []
+                notAllowedIn: ["Needfest", "Fireseek", "Readying", "Coldeven", "Sunsebb"],
+                windSpeed: "7d10+70"
+                // },
+                // {
+                //     range: [100, 100],
+                //     type: "Special",
+                //     min: null,
+                //     max: null,
+                //     continuation: "—",
+                //     rainbowChance: "—",
+                //     notAllowedIn: []
             }
         ];
 
@@ -636,7 +697,7 @@
             "Thunderstorm": "weather-lightning-rainy.svg",
             "Tropical storm": "weather-hurricane.svg",
             "Monsoon": "weather-pouring.svg",
-            "Gale": "weather-windy.svg",
+            "Gale": "weather-windy-variant.svg",
             "Hurricane": "weather-hurricane.svg",
             "Special": "weather-special.svg",
             "": "weather-none.svg"
@@ -782,15 +843,15 @@
             const sunrise = getSunrise(currentDayOfYear);
             const sunset = getSunset(currentDayOfYear);
 
-            document.getElementById('moon-phases').innerHTML = `
+            document.getElementById('celestial-info').innerHTML = `
                 <tr><th>Luna</th><th>Celene</th><th>Sunrise</th><th>Sunset</th></tr>
-                <tr>
+                <tr class="icon-row">
                     <td><img src="images/moons/${moonPhaseImages[luna]}"></td>
                     <td><img src="images/moons/${moonPhaseImages[celene]}"></td>
                     <td><img src="images/sun/sunrise.svg"></td>
                     <td><img src="images/sun/sunset.svg"></td>
                 </tr>
-                <tr>
+                <tr class="icon-label-row">
                     <td>${luna}</td>
                     <td>${celene}</td>
                     <td>${formatHour(sunrise)}</td>
@@ -801,12 +862,18 @@
             document.getElementById('weekday-display').textContent = weekdayName;
             document.getElementById('weather-info').innerHTML = `
                 <tr>
-                    <td rowspan=2><img src="images/weather/thermometer.svg"></td>
-                    <td>${weatherState.high} ℉</td>
+                    <td rowspan=2 class="cell-middle-right"><img src="images/weather/thermometer.svg"></td>
+                    <td class="cell-lower-left">${weatherState.high} ℉</td>
                     <td><img src="images/weather/${skyConditionImages[weatherState.sky]}"></td>
                     <td><img src="images/weather/${precipitationImages[weatherState.precipType]}"></td>
+                    <td><img src="images/weather/weather-windy.svg"></td>
                 </tr>
-                <tr></td><td>${weatherState.low} ℉</td><td>${weatherState.sky}</td><td>${weatherState.precipType}</td></tr>
+                <tr  class="icon-label-row">
+                    <td class="cell-upper-left">${weatherState.low} ℉</td>
+                    <td>${weatherState.sky}</td>
+                    <td>${weatherState.precipType}</td>
+                    <td>${weatherState.windSpeed} mph</td>
+                </tr>
             `;
 
             // Display Tides
