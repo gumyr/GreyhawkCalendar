@@ -66,25 +66,25 @@
             text-align: center;
         }
 
-        .moon-phase-table table {
+        .calendar-table table {
             width: auto;
             margin: 0 auto;
         }
 
-        /* .moon-phase-table th,
-        .moon-phase-table td {
+        /* .calendar-table th,
+        .calendar-table td {
             text-align: center;
             vertical-align: middle;
         } */
 
-        .moon-phase-table td {
+        .calendar-table td {
             width: 120px;
             /* adjust as needed */
             padding: 0.5rem;
             vertical-align: middle;
         }
 
-        .moon-phase-table img {
+        .calendar-table img {
             display: block;
             margin: 0 auto 0.25rem;
             width: 48px;
@@ -109,17 +109,19 @@
             flex-shrink: 0;
         }
 
-        .moon-label {
-            margin-top: auto;
-            /* pushes text to bottom of moon-cell */
-            font-size: 0.9rem;
+        .weekday {
+            font-size: 1.75rem;
+            font-variant: small-caps;
+            margin-bottom: 1rem;
+
         }
     </style>
 </head>
 
 <body>
     <div class="calendar">
-        <h1 id="calendar-header"></h1>
+        <h1>Greyhawk Calendar</h1>
+        <div id="weekday-display" class="weekday"></div>
         <div class="datetime-group">
             <div class="datetime-field">
                 <div class="label">Year</div>
@@ -154,14 +156,14 @@
                 </div>
             </div>
         </div>
-        <div class="moon-phase-table">
+        <div class="calendar-table">
             <table id="moon-phases"></table>
         </div>
-        <div class="moon-phase-table">
+        <div class="calendar-table">
             <table id="weather-info"></table>
         </div>
 
-        <div class="moon-phase-table">
+        <div class="calendar-table">
             <table id="tide-info"></table>
         </div>
         <label for="latitude-slider">
@@ -170,18 +172,6 @@
                 title="Adjusts daylight and average temperature. Lower values simulate warmer regions or lower elevations. Higher values simulate colder regions or mountains." />
             <span id="latitude-value">38°</span>
         </label>
-        <!--label class="tooltip-wrapper">
-            Latitude:
-            <input type="range" id="latitude-slider" min="0" max="90" value="45" />
-            <span id="latitude-value">45°</span>
-        </label>
-
-        <span class="tooltip-text">
-            Adjusts daylight and average temperature.<br>
-            Lower values simulate warmer regions or lower elevations.<br>
-            Higher values simulate colder regions or mountains.
-        </span-->
-
 
         <div class="save-load-controls">
             <button id="btn-save-state">Save</button>
@@ -192,20 +182,98 @@
     </div>
 
     <script>
-        const monthWeather = {
-            'Fireseek': { base: 32, high: 'd10', low: 'd20', precip: 46, sky: [23, 50], sunrise: '7:21', sunset: '5:01' },
-            'Readying': { base: 34, high: 'd6+4', low: 'd10+4', precip: 40, sky: [25, 50], sunrise: '6:55', sunset: '5:36' },
-            'Coldeven': { base: 42, high: 'd8+4', low: 'd10+4', precip: 44, sky: [27, 54], sunrise: '6:12', sunset: '6:09' },
-            'Planting': { base: 52, high: 'd10+6', low: 'd8+4', precip: 42, sky: [20, 55], sunrise: '5:24', sunset: '6:39' },
-            'Flocktime': { base: 63, high: 'd10+6', low: 'd10+6', precip: 42, sky: [20, 53], sunrise: '4:45', sunset: '7:10' },
-            'Wealsun': { base: 71, high: 'd8+8', low: 'd6', precip: 36, sky: [20, 60], sunrise: '4:32', sunset: '7:32' },
-            'Reaping': { base: 77, high: 'd6+4', low: 'd6+6', precip: 33, sky: [22, 62], sunrise: '4:45', sunset: '7:29' },
-            'Goodmonth': { base: 75, high: 'd4+6', low: 'd6+6', precip: 33, sky: [25, 60], sunrise: '5:13', sunset: '6:57' },
-            'Harvester': { base: 68, high: 'd8+6', low: 'd8+6', precip: 33, sky: [33, 55], sunrise: '5:42', sunset: '6:10' },
-            'Patchwall': { base: 57, high: 'd10+5', low: 'd10+5', precip: 36, sky: [35, 60], sunrise: '6:12', sunset: '5:21' },
-            'Ready’reat': { base: 46, high: 'd10+4', low: 'd10+4', precip: 40, sky: [20, 50], sunrise: '6:46', sunset: '4:45' },
-            'Sunsebb': { base: 33, high: 'd8+5', low: 'd20', precip: 43, sky: [25, 50], sunrise: '7:19', sunset: '4:36' }
+        //
+        // Global Constants and Variables
+        //
+        const totalDays = 360; // days in a year
+        const lastKingTide = 888 // random offset of moons' position
+
+        let currentDay = 0.0; // total day count since CY 576
+        let currentLatitude = 38; // Saltmarsh
+        let weatherState = {
+            lastUpdateTime: null,
+            timeToChangeWeather: 0.0,
+            continuation: null,
+            high: null,
+            low: null,
+            temp: null,
+            sky: null,
+            skyRoll: null,
+            precipRoll: null,
+            hasPrecip: false,
+            precipType: ""
         };
+
+        //
+        // Utilities
+        //
+        function formatHour(decimalHour) {
+            const totalMinutes = Math.round(decimalHour * 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            const padded = minutes.toString().padStart(2, '0');
+            return `${hours}:${padded}`;
+        }
+
+        function rollDice(expr) {
+            const match = expr.match(/d(\d+)([+-]\d+)?/);
+            if (!match) return 0;
+            const sides = parseInt(match[1]);
+            const bonus = match[2] ? parseInt(match[2]) : 0;
+            return Math.floor(Math.random() * sides) + 1 + bonus;
+        }
+
+        function saveStateToFile() {
+            const data = {
+                currentDay,
+                weatherState,
+                currentLatitude
+            };
+
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            const timestamp = new Date().toISOString().slice(0, 10); // e.g., "2025-03-30"
+            a.download = `greyhawk-calendar-${timestamp}.json`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+        function loadStateFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (typeof data.currentDay === "number" && typeof data.weatherState === "object") {
+                        currentDay = data.currentDay;
+                        weatherState = data.weatherState;
+
+                        // Restore latitude (with fallback)
+                        currentLatitude = typeof data.currentLatitude === "number" ? data.currentLatitude : 38;
+                        document.getElementById("latitude-slider").value = currentLatitude;
+                        document.getElementById("latitude-value").textContent = `${currentLatitude}°`;
+
+                        updateDisplay();
+                    } else {
+                        alert("Invalid file format.");
+                    }
+                } catch (e) {
+                    alert("Failed to parse file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        //
+        // Calendar
+        //
+        function getDayInYear(currentDay) {
+            return (Math.floor(currentDay) % totalDays + totalDays) % totalDays;
+        }
+
         const calendarStructure = [
             { name: "Needfest", days: 6 },
             { name: "Fireseek", days: 28 },
@@ -225,9 +293,7 @@
             { name: "Sunsebb", days: 28 }
         ];
 
-
         const dayToMonth = []; // index: 0–359 → { name, day }
-
         (function generateDayMapping() {
             let dayOfYear = 0;
             for (const entry of calendarStructure) {
@@ -237,6 +303,53 @@
                 }
             }
         })();
+
+        function getCalendarDate(dayOffset) {
+            const dayInYear = getDayInYear(dayOffset);
+            const entry = dayToMonth[dayInYear];
+            return `${entry.day} ${entry.name}`;
+        }
+        function changeHours(delta) {
+            currentDay += delta / 24;
+            updateDisplay();
+        }
+
+        function changeDays(delta) {
+            currentDay += delta;
+            updateDisplay();
+        }
+
+        function changeYears(delta) {
+            currentDay += delta * totalDays;
+            updateDisplay();
+        }
+        function getMonthIndex(dayInYear) {
+            let dayCount = 0;
+            for (let i = 0; i < calendarStructure.length; i++) {
+                const monthLength = calendarStructure[i].days;
+                if (dayInYear < dayCount + monthLength) {
+                    return i;
+                }
+                dayCount += monthLength;
+            }
+            return calendarStructure.length - 1; // fallback
+        }
+
+        function changeMonths(delta) {
+            const dayInYear = (Math.floor(currentDay) % totalDays + totalDays) % totalDays;
+            const currentMonthIndex = getMonthIndex(dayInYear);
+            const daysInCurrentMonth = calendarStructure[currentMonthIndex].days;
+
+            currentDay += delta * daysInCurrentMonth;
+            updateDisplay();
+        }
+
+        //
+        // Moons' State
+        //
+        const lunaCycle = 28;
+        const celeneCycle = 91;
+        const moonPhases = ["New", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full", "Waning Gibbous", "Last Quarter", "Waning Crescent"];
 
         const moonPhaseImages = {
             "New": "moon-new.svg",
@@ -248,33 +361,94 @@
             "Last Quarter": "moon-last-quarter.svg",
             "Waning Crescent": "moon-waning-crescent.svg"
         };
-        const skyConditionImages = {
-            "Clear": "weather-sunny.svg",
-            "Partly Cloudy": "weather-partly-cloudy.svg",
-            "Cloudy": "weather-cloudy.svg"
+
+        function getMoonPhase(day, cycleLength, offset = lastKingTide) {
+            const adjustedDay = (day + offset + cycleLength) % cycleLength;
+            const phaseIndex = Math.floor(adjustedDay / (cycleLength / moonPhases.length));
+            return moonPhases[phaseIndex];
         }
-        const precipitationImages = {
-            "Blizzard, heavy": "weather-snowy-heavy.svg",
-            "Blizzard": "weather-snowy.svg",
-            "Snowstorm, heavy": "weather-snowy-heavy.svg",
-            "Snowstorm, light": "weather-snowy.svg",
-            "Sleet storm": "weather-snowy-rainy.svg",
-            "Hailstorm": "weather-hail.svg",
-            "Fog, heavy": "weather-fog.svg",
-            "Fog, light": "weather-fog.svg",
-            "Mist": "weather-fog.svg",
-            "Drizzle": "weather-fog.svg",
-            "Rainstorm, light": "weather-rainy.svg",
-            "Rainstorm, heavy": "weather-pouring.svg",
-            "Thunderstorm": "weather-lightning-rainy.svg",
-            "Tropical storm": "weather-hurricane.svg",
-            "Monsoon": "weather-pouring.svg",
-            "Gale": "weather-windy.svg",
-            "Hurricane": "weather-hurricane.svg",
-            "Special": "weather-special.svg",
-            "": "weather-none.svg"
+        //
+        // Weather
+        //
+        const monthWeather = {
+            'Fireseek': { base: 32, high: 'd10', low: 'd20', precip: 46, sky: [23, 50], sunrise: '7:21', sunset: '5:01' },
+            'Readying': { base: 34, high: 'd6+4', low: 'd10+4', precip: 40, sky: [25, 50], sunrise: '6:55', sunset: '5:36' },
+            'Coldeven': { base: 42, high: 'd8+4', low: 'd10+4', precip: 44, sky: [27, 54], sunrise: '6:12', sunset: '6:09' },
+            'Planting': { base: 52, high: 'd10+6', low: 'd8+4', precip: 42, sky: [20, 55], sunrise: '5:24', sunset: '6:39' },
+            'Flocktime': { base: 63, high: 'd10+6', low: 'd10+6', precip: 42, sky: [20, 53], sunrise: '4:45', sunset: '7:10' },
+            'Wealsun': { base: 71, high: 'd8+8', low: 'd6', precip: 36, sky: [20, 60], sunrise: '4:32', sunset: '7:32' },
+            'Reaping': { base: 77, high: 'd6+4', low: 'd6+6', precip: 33, sky: [22, 62], sunrise: '4:45', sunset: '7:29' },
+            'Goodmonth': { base: 75, high: 'd4+6', low: 'd6+6', precip: 33, sky: [25, 60], sunrise: '5:13', sunset: '6:57' },
+            'Harvester': { base: 68, high: 'd8+6', low: 'd8+6', precip: 33, sky: [33, 55], sunrise: '5:42', sunset: '6:10' },
+            'Patchwall': { base: 57, high: 'd10+5', low: 'd10+5', precip: 36, sky: [35, 60], sunrise: '6:12', sunset: '5:21' },
+            'Ready’reat': { base: 46, high: 'd10+4', low: 'd10+4', precip: 40, sky: [20, 50], sunrise: '6:46', sunset: '4:45' },
+            'Sunsebb': { base: 33, high: 'd8+5', low: 'd20', precip: 43, sky: [25, 50], sunrise: '7:19', sunset: '4:36' }
+        };
+
+        function updateWeather() {
+            const currentTime = currentDay;
+            const dayOfYear = (Math.floor(currentTime) % totalDays + totalDays) % totalDays;
+
+            if (currentTime >= weatherState.timeToChangeWeather) {
+                // Check continuation first
+                if (weatherState.hasPrecip && weatherState.continuation) {
+                    const roll = rollDice("d100");
+                    if (roll <= parseInt(weatherState.continuation)) {
+                        // Weather continues
+                        weatherState.timeToChangeWeather = currentTime + rollDice("d4") / 24; // 1–4 hours
+                        return;
+                    }
+                }
+
+                // Generate new weather
+                const base = getBaseTemperature(dayOfYear) + getTemperatureOffset(currentLatitude);
+                const highAdj = rollDice("d10") + 6;
+                const lowAdj = rollDice("d8") + 4;
+
+                weatherState.high = Math.round(base + highAdj);
+                weatherState.low = Math.round(base - lowAdj);
+                weatherState.temp = Math.round((weatherState.high + weatherState.low) / 2);
+
+                const skyDist = getSkyDistribution(dayOfYear);
+                weatherState.skyRoll = rollDice("d100");
+                weatherState.sky = getSkyCondition(weatherState.skyRoll, skyDist);
+
+                weatherState.precipRoll = rollDice("d100");
+                weatherState.hasPrecip = weatherState.precipRoll <= getPrecipChance(dayOfYear) && weatherState.sky === "Cloudy";
+
+                if (weatherState.hasPrecip) {
+                    const type = getPrecipitationType(base);
+                    weatherState.precipType = type;
+
+                    // Look up continuation value from type
+                    const entry = precipitationTypes.find(e => e.type === type);
+                    weatherState.continuation = entry?.continuation || "0%";
+                } else {
+                    weatherState.precipType = "";
+                    weatherState.continuation = "0%";
+                }
+
+                weatherState.timeToChangeWeather = currentTime + rollDice("d6") / 2; // 0.5–3 hours
+                weatherState.lastUpdateTime = currentTime;
+            }
         }
 
+        //
+        // Temperatures
+        //
+        function getBaseTemperature(day) {
+            // Rough sine wave over the year (coldest at day 1/360, warmest ~180)
+            return 50 + 25 * Math.sin((2 * Math.PI * (day - 80)) / totalDays);
+        }
+
+        function getTemperatureOffset(latitude) {
+            const offset = (45 - latitude) * 2;
+            return Math.max(-30, Math.min(30, offset));
+        }
+
+        //
+        // Sky conditions and precipitation
+        //
         const precipitationTypes = [
             {
                 range: [1, 2],
@@ -440,80 +614,34 @@
             }
         ];
 
-        const totalDays = 360;
-
-        let currentDay = 0.0; // total day count since CY 576
-
-        let currentLatitude = 38; // Saltmarsh
-
-        let weatherState = {
-            lastUpdateTime: null,
-            timeToChangeWeather: 0.0,
-            continuation: null,
-            high: null,
-            low: null,
-            temp: null,
-            sky: null,
-            skyRoll: null,
-            precipRoll: null,
-            hasPrecip: false,
-            precipType: ""
-        };
-
-
-        function getCalendarDate(dayOffset) {
-            const dayInYear = (Math.floor(dayOffset) % 360 + 360) % 360;
-            const entry = dayToMonth[dayInYear];
-            return `${entry.day} ${entry.name}`;
+        const skyConditionImages = {
+            "Clear": "weather-sunny.svg",
+            "Partly Cloudy": "weather-partly-cloudy.svg",
+            "Cloudy": "weather-cloudy.svg"
         }
 
-        //
-        // Utilities
-        //
-        function formatHour(decimalHour) {
-            const totalMinutes = Math.round(decimalHour * 60);
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
-            const padded = minutes.toString().padStart(2, '0');
-            return `${hours}:${padded}`;
+        const precipitationImages = {
+            "Blizzard, heavy": "weather-snowy-heavy.svg",
+            "Blizzard": "weather-snowy.svg",
+            "Snowstorm, heavy": "weather-snowy-heavy.svg",
+            "Snowstorm, light": "weather-snowy.svg",
+            "Sleet storm": "weather-snowy-rainy.svg",
+            "Hailstorm": "weather-hail.svg",
+            "Fog, heavy": "weather-fog.svg",
+            "Fog, light": "weather-fog.svg",
+            "Mist": "weather-fog.svg",
+            "Drizzle": "weather-fog.svg",
+            "Rainstorm, light": "weather-rainy.svg",
+            "Rainstorm, heavy": "weather-pouring.svg",
+            "Thunderstorm": "weather-lightning-rainy.svg",
+            "Tropical storm": "weather-hurricane.svg",
+            "Monsoon": "weather-pouring.svg",
+            "Gale": "weather-windy.svg",
+            "Hurricane": "weather-hurricane.svg",
+            "Special": "weather-special.svg",
+            "": "weather-none.svg"
         }
 
-        function rollDice(expr) {
-            const match = expr.match(/d(\d+)([+-]\d+)?/);
-            if (!match) return 0;
-            const sides = parseInt(match[1]);
-            const bonus = match[2] ? parseInt(match[2]) : 0;
-            return Math.floor(Math.random() * sides) + 1 + bonus;
-        }
-
-        //
-        // Moons' State
-        //
-        const lunaCycle = 28;
-        const celeneCycle = 91;
-        const moonPhases = ["New", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full", "Waning Gibbous", "Last Quarter", "Waning Crescent"];
-
-        function getMoonPhase(day, cycleLength) {
-            const phaseIndex = Math.floor((day % cycleLength + cycleLength) % cycleLength / (cycleLength / moonPhases.length));
-            return moonPhases[phaseIndex];
-        }
-
-        //
-        // Temperatures
-        //
-        function getBaseTemperature(day) {
-            // Rough sine wave over the year (coldest at day 1/360, warmest ~180)
-            return 50 + 25 * Math.sin((2 * Math.PI * (day - 80)) / 360);
-        }
-
-        function getTemperatureOffset(latitude) {
-            const offset = (45 - latitude) * 2;
-            return Math.max(-30, Math.min(30, offset));
-        }
-
-        //
-        // Sky conditions and precipitation
-        //
         function getSkyCondition(roll, thresholds) {
             const [clearMax, partlyMax] = thresholds;
             if (roll <= clearMax) return "Clear";
@@ -522,7 +650,7 @@
         }
 
         function getSkyDistribution(day) {
-            const clear = 20 + 15 * Math.sin((2 * Math.PI * (day + 30) / 360));
+            const clear = 20 + 15 * Math.sin((2 * Math.PI * (day + 30) / totalDays));
             const partly = 40;
             const cloudy = 100 - (clear + partly);
             return [Math.round(clear), Math.round(clear + partly)];
@@ -549,7 +677,7 @@
                     if (roll >= minRoll && roll <= maxRoll) {
                         const tempOk = (entry.min === null || tempF >= entry.min) &&
                             (entry.max === null || tempF <= entry.max);
-                        const currentDayOfYear = (Math.floor(currentDay) % 360 + 360) % 360;
+                        const currentDayOfYear = getDayInYear(currentDay);
 
                         const monthOk = !entry.notAllowedIn || !entry.notAllowedIn.includes(dayToMonth[currentDayOfYear].name);
                         if (tempOk && monthOk) {
@@ -565,7 +693,7 @@
         // Sun Position
         //
         function getSolarDeclination(day) {
-            return -23.44 * Math.cos((2 * Math.PI / 360) * (day + 10));
+            return -23.44 * Math.cos((2 * Math.PI / totalDays) * (day + 10));
         }
 
         function getDaylightHours(day, latitude = 45) {
@@ -592,7 +720,6 @@
         // Tides
         //
         function getTideHeight(time) {
-            const lastKingTide = 888 // random offset
             const sunBase = Math.sin(2 * Math.PI * time - lastKingTide)
             const lunaBase = Math.sin(2 * (28 - 1) / 28 * Math.PI * time - lastKingTide)
             const celeneBase = Math.sin(2 * (91 - 1) / 91 * Math.PI * time - lastKingTide)
@@ -627,62 +754,14 @@
         }
 
 
-
-
-
-        function updateWeather() {
-            const currentTime = currentDay;
-            const dayOfYear = (Math.floor(currentTime) % totalDays + totalDays) % totalDays;
-
-            if (currentTime >= weatherState.timeToChangeWeather) {
-                // Check continuation first
-                if (weatherState.hasPrecip && weatherState.continuation) {
-                    const roll = rollDice("d100");
-                    if (roll <= parseInt(weatherState.continuation)) {
-                        // Weather continues
-                        weatherState.timeToChangeWeather = currentTime + rollDice("d4") / 24; // 1–4 hours
-                        return;
-                    }
-                }
-
-                // Generate new weather
-                const base = getBaseTemperature(dayOfYear) + getTemperatureOffset(currentLatitude);
-                const highAdj = rollDice("d10") + 6;
-                const lowAdj = rollDice("d8") + 4;
-
-                weatherState.high = Math.round(base + highAdj);
-                weatherState.low = Math.round(base - lowAdj);
-                weatherState.temp = Math.round((weatherState.high + weatherState.low) / 2);
-
-                const skyDist = getSkyDistribution(dayOfYear);
-                weatherState.skyRoll = rollDice("d100");
-                weatherState.sky = getSkyCondition(weatherState.skyRoll, skyDist);
-
-                weatherState.precipRoll = rollDice("d100");
-                weatherState.hasPrecip = weatherState.precipRoll <= getPrecipChance(dayOfYear) && weatherState.sky === "Cloudy";
-
-                if (weatherState.hasPrecip) {
-                    const type = getPrecipitationType(base);
-                    weatherState.precipType = type;
-
-                    // Look up continuation value from type
-                    const entry = precipitationTypes.find(e => e.type === type);
-                    weatherState.continuation = entry?.continuation || "0%";
-                } else {
-                    weatherState.precipType = "";
-                    weatherState.continuation = "0%";
-                }
-
-                weatherState.timeToChangeWeather = currentTime + rollDice("d6") / 2; // 0.5–3 hours
-                weatherState.lastUpdateTime = currentTime;
-            }
-        }
-
+        //
+        // GUI Updates
+        //
         function updateDisplay() {
             const weekdays = ["Starday", "Sunday", "Moonday", "Godsday", "Waterday", "Earthday", "Freeday"];
             const year = 576 + Math.floor(currentDay / totalDays);
             const weekdayName = weekdays[(Math.floor(currentDay) % 7 + 7) % 7];
-            const currentDayOfYear = (Math.floor(currentDay) % 360 + 360) % 360;
+            const currentDayOfYear = getDayInYear(currentDay);
 
             const { name: displayMonth, day: displayDay } = dayToMonth[currentDayOfYear];
 
@@ -718,7 +797,8 @@
                     <td>${formatHour(sunset)}</td>
                 </tr>
             `;
-            document.getElementById('calendar-header').textContent = `Greyhawk Calendar – ${weekdayName}`;
+            // document.getElementById('calendar-header').textContent = `Greyhawk Calendar – ${weekdayName}`;
+            document.getElementById('weekday-display').textContent = weekdayName;
             document.getElementById('weather-info').innerHTML = `
                 <tr>
                     <td rowspan=2><img src="images/weather/thermometer.svg"></td>
@@ -739,6 +819,9 @@
 
         }
 
+        //
+        // Event Listeners
+        //
         function enableHoldToRepeat(button, callback, initialDelay = 400, repeatRate = 150) {
             let interval = null;
             let holdTimeout = null;
@@ -774,86 +857,6 @@
             button.addEventListener('touchend', stop);
         }
 
-        function changeHours(delta) {
-            currentDay += delta / 24;
-            updateDisplay();
-        }
-
-        function changeDays(delta) {
-            currentDay += delta;
-            updateDisplay();
-        }
-
-        function changeYears(delta) {
-            currentDay += delta * totalDays;
-            updateDisplay();
-        }
-        function getMonthIndex(dayInYear) {
-            let dayCount = 0;
-            for (let i = 0; i < calendarStructure.length; i++) {
-                const monthLength = calendarStructure[i].days;
-                if (dayInYear < dayCount + monthLength) {
-                    return i;
-                }
-                dayCount += monthLength;
-            }
-            return calendarStructure.length - 1; // fallback
-        }
-        function changeMonths(delta) {
-            const dayInYear = (Math.floor(currentDay) % totalDays + totalDays) % totalDays;
-            const currentMonthIndex = getMonthIndex(dayInYear);
-            const daysInCurrentMonth = calendarStructure[currentMonthIndex].days;
-
-            currentDay += delta * daysInCurrentMonth;
-            updateDisplay();
-        }
-        function saveStateToFile() {
-            const data = {
-                currentDay,
-                weatherState,
-                currentLatitude
-            };
-
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement("a");
-            a.href = url;
-            const timestamp = new Date().toISOString().slice(0, 10); // e.g., "2025-03-30"
-            a.download = `greyhawk-calendar-${timestamp}.json`;
-            a.click();
-
-            URL.revokeObjectURL(url);
-        }
-        function loadStateFromFile(file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    if (typeof data.currentDay === "number" && typeof data.weatherState === "object") {
-                        currentDay = data.currentDay;
-                        weatherState = data.weatherState;
-
-                        // Restore latitude (with fallback)
-                        currentLatitude = typeof data.currentLatitude === "number" ? data.currentLatitude : 38;
-                        document.getElementById("latitude-slider").value = currentLatitude;
-                        document.getElementById("latitude-value").textContent = `${currentLatitude}°`;
-
-                        updateDisplay();
-                    } else {
-                        alert("Invalid file format.");
-                    }
-                } catch (e) {
-                    alert("Failed to parse file.");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-
-        updateDisplay();
-
         window.addEventListener("DOMContentLoaded", () => {
             enableHoldToRepeat(document.getElementById('btn-hour-up'), () => changeHours(1));
             enableHoldToRepeat(document.getElementById('btn-hour-down'), () => changeHours(-1));
@@ -887,6 +890,8 @@
                 latitudeValue.textContent = `${currentLatitude}°`;
                 updateDisplay(); // or updateWeather(); depending on your flow
             });
+
+            updateDisplay();
 
         });
 
