@@ -46,9 +46,13 @@
         }
 
         button {
-            margin: 0.5rem;
-            padding: 0.5rem 1rem;
-            font-size: 0.5rem;
+            margin: 0;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .tight-button-group button {
+            margin-right: 2px;
         }
 
         .date-part {
@@ -65,10 +69,19 @@
         .calendar-table table {
             width: auto;
             margin: 0 auto;
+            height: 120px;
         }
 
         .calendar-table td {
             width: 80px;
+        }
+
+        .calendar-table td.day-cell {
+            width: 60px;
+        }
+
+        .calendar-table td.time-cell {
+            width: 120px;
         }
 
         .calendar-table img {
@@ -84,6 +97,24 @@
         .icon-label-row td {
             vertical-align: top;
         }
+
+        .weather-cell-right {
+            vertical-align: middle;
+            text-align: right;
+        }
+
+        /* .weather-cell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .weather-cell img {
+            height: 48px;
+            margin-bottom: 0.25rem;
+        } */
 
         .cell-middle-right {
             vertical-align: middle;
@@ -126,7 +157,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100px;
+            /* height: 100px; */
         }
 
         .moon-cell img {
@@ -154,8 +185,8 @@
         .tooltip-box {
             display: none;
             position: absolute;
-            top: 110%;
-            left: 0;
+            bottom: 110%;
+            right: 0;
             background-color: #222;
             color: #fff;
             padding: 10px;
@@ -186,14 +217,18 @@
                 <tr>
                     <th>Year</th>
                     <th>Month</th>
-                    <th>Day</th>
-                    <th>Hour</th>
+                    <th class="day-cell">Day</th>
+                    <th class="time-cell">Time</th>
                 </tr>
                 <tr>
                     <td><button id="btn-year-up">▲</button></td>
                     <td><button id="btn-month-up">▲</button></td>
-                    <td><button id="btn-day-up">▲</button></td>
-                    <td><button id="btn-hour-up">▲</button></td>
+                    <td class="day-cell"><button id="btn-day-up">▲</button></td>
+                    <td class="time-cell">
+                        <button id="btn-hour-up">▲</button>
+                        <button id="btn-minute-up">▲</button>
+                        <button id="btn-round-up">▲</button>
+                    </td>
                 </tr>
                 <tr>
                     <td>
@@ -202,10 +237,10 @@
                     <td>
                         <div id="display-month" class="date-part"></div>
                     </td>
-                    <td>
+                    <td class="day-cell">
                         <div id="display-day" class="date-part"></div>
                     </td>
-                    <td>
+                    <td class="time-cell">
                         <div id="display-hour" class="date-part"></div>
                     </td>
                 </tr>
@@ -213,7 +248,11 @@
                     <td><button id="btn-year-down">▼</button></td>
                     <td><button id="btn-month-down">▼</button></td>
                     <td><button id="btn-day-down">▼</button></td>
-                    <td><button id="btn-hour-down">▼</button></td>
+                    <td class="tight-button-group">
+                        <button id="btn-hour-down">▼</button>
+                        <button id="btn-minute-down">▲</button>
+                        <button id="btn-round-down">▲</button>
+                    </td>
                 </tr>
             </table>
         </div>
@@ -380,16 +419,22 @@
             const entry = dayToMonth[dayInYear];
             return `${entry.day} ${entry.name}`;
         }
+        function changeRounds(delta) {
+            currentDay += delta / 24 / 60 / 10;
+            updateDisplay();
+        }
+        function changeMinutes(delta) {
+            currentDay += delta / 24 / 60;
+            updateDisplay();
+        }
         function changeHours(delta) {
             currentDay += delta / 24;
             updateDisplay();
         }
-
         function changeDays(delta) {
             currentDay += delta;
             updateDisplay();
         }
-
         function changeYears(delta) {
             currentDay += delta * totalDays;
             updateDisplay();
@@ -907,14 +952,19 @@
 
             const { name: displayMonth, day: displayDay } = dayToMonth[currentDayOfYear];
 
+            const totalTenths = Math.round(currentDay * 14400); // 1440 minutes * 10 tenths
+            const hours = Math.floor(totalTenths / 600) % 24;
+            const minutes = Math.floor((totalTenths % 600) / 10);
+            const tenths = totalTenths % 10;
 
-            const hour = Math.floor((currentDay % 1 + 1) % 1 * 24);
-            const hourStr = `${hour.toString().padStart(2, '0')}:00`;
+            const timeStr = `${hours.toString().padStart(2, '0')}:` +
+                `${minutes.toString().padStart(2, '0')}.` +
+                `${tenths}`;
 
             document.getElementById('display-day').textContent = displayDay;
             document.getElementById('display-month').textContent = displayMonth;
             document.getElementById('display-year').textContent = year;
-            document.getElementById('display-hour').textContent = hourStr;
+            document.getElementById('display-hour').textContent = timeStr;
 
             // Display Moon State
             const luna = getMoonPhase(currentDay, lunaCycle);
@@ -943,23 +993,31 @@
 
             document.getElementById('weekday-display').textContent = weekdayName;
             document.getElementById('weather-info').innerHTML = `
-                <tr>
-                    <td rowspan=2 class="cell-middle-right"><img src="images/weather/thermometer.svg"></td>
-                    <td class="cell-lower-left">${weatherState.high} ℉</td>
-                    <td><img src="images/weather/${skyConditionImages[weatherState.sky]}"></td>
-                    <td><img src="images/weather/${precipitationImages[weatherState.precipType]}"></td>
+                <tr class="weather-display-row">
                     <td>
-                        <div class="tooltip-wrapper" id="wind-icon">
-                            <img src="images/weather/weather-windy.svg">
-                            <div class="tooltip-box" id="wind-tooltip"></div>
+                        <div>
+                            <img src="images/weather/thermometer.svg">
+                            <div>
+                                <div>${weatherState.high} ℉</div>
+                                <div>${weatherState.low} ℉</div>
+                            </div>
                         </div>
                     </td>
-                </tr>
-                <tr  class="icon-label-row">
-                    <td class="cell-upper-left">${weatherState.low} ℉</td>
-                    <td>${weatherState.sky}</td>
-                    <td>${weatherState.precipType}</td>
-                    <td>${weatherState.windSpeed} mph</td>
+                    <td>
+                        <img src="images/weather/${skyConditionImages[weatherState.sky]}">
+                        <div>${weatherState.sky}</div>
+                    </td>
+                    <td>
+                        <img src="images/weather/${precipitationImages[weatherState.precipType]}">
+                        <div>${weatherState.precipType}</div>
+                    </td>
+                    <td>
+                        <div class="tooltip-wrapper" id="wind-icon">
+                        <img src="images/weather/weather-windy.svg">
+                        <div class="tooltip-box" id="wind-tooltip"></div>
+                        </div>
+                        <div>${weatherState.windSpeed} mph</div>
+                    </td>
                 </tr>
             `;
 
@@ -1030,6 +1088,10 @@
         window.addEventListener("DOMContentLoaded", () => {
             enableHoldToRepeat(document.getElementById('btn-hour-up'), () => changeHours(1));
             enableHoldToRepeat(document.getElementById('btn-hour-down'), () => changeHours(-1));
+            enableHoldToRepeat(document.getElementById('btn-minute-up'), () => changeMinutes(1));
+            enableHoldToRepeat(document.getElementById('btn-minute-down'), () => changeMinutes(-1));
+            enableHoldToRepeat(document.getElementById('btn-round-up'), () => changeRounds(1));
+            enableHoldToRepeat(document.getElementById('btn-round-down'), () => changeRounds(-1));
 
             enableHoldToRepeat(document.getElementById('btn-day-up'), () => changeDays(1));
             enableHoldToRepeat(document.getElementById('btn-day-down'), () => changeDays(-1));
