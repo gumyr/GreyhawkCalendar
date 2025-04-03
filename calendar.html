@@ -90,6 +90,12 @@
             height: 48px;
         }
 
+        .title img {
+            display: block;
+            margin: 0 auto 0.05rem;
+            height: 120px;
+        }
+
         .icon-row td {
             vertical-align: bottom;
         }
@@ -102,19 +108,6 @@
             vertical-align: middle;
             text-align: right;
         }
-
-        /* .weather-cell {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            white-space: nowrap;
-        }
-
-        .weather-cell img {
-            height: 48px;
-            margin-bottom: 0.25rem;
-        } */
 
         .cell-middle-right {
             vertical-align: middle;
@@ -167,10 +160,12 @@
         }
 
         .weekday {
-            font-size: 1.75rem;
+            font-size: 2rem;
+            font-weight: bold;
             font-variant: small-caps;
+            text-shadow: 2px 2px #a0a0a0;
+            margin-top: 1rem;
             margin-bottom: 1rem;
-
         }
 
         h1 {
@@ -210,7 +205,10 @@
 
 <body>
     <div class="calendar">
-        <h1>Greyhawk Calendar</h1>
+        <!-- <h1>Greyhawk Calendar</h1> -->
+        <div class="title">
+            <img src="images/TheWorldOfGreyhawkCalendar.svg">
+        </div>
         <div id="weekday-display" class="weekday"></div>
         <div class="calendar-table datetime-table">
             <table>
