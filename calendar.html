@@ -501,7 +501,15 @@
 
         function updateWeather() {
             const currentTime = currentDay;
+            const timeOfDay = currentDay % 1; // Fractional part of day
             const dayOfYear = (Math.floor(currentTime) % totalDays + totalDays) % totalDays;
+
+            // Adjust the temperature for the time of day
+            const highTemp = weatherState.high;
+            const lowTemp = weatherState.low;
+            const tempAmplitude = (highTemp - lowTemp) / 2;
+            const tempMidpoint = (highTemp + lowTemp) / 2;
+            weatherState.temp = Math.round(tempMidpoint + tempAmplitude * Math.sin((timeOfDay * 2 * Math.PI) - Math.PI / 2));
 
             if (currentTime >= weatherState.timeToChangeWeather) {
                 // Check continuation first
@@ -514,15 +522,18 @@
                     }
                 }
 
-                // Generate new weather
-                const base = getBaseTemperature(dayOfYear) + getTemperatureOffset(currentLatitude);
-                const highAdj = rollDice("d10") + 6;
-                const lowAdj = rollDice("d8") + 4;
+                // Generate New Temp
+                const baseTemp = getBaseTemperature(dayOfYear) + getTemperatureOffset(currentLatitude);
+                const highTemp = baseTemp + rollDice("d10") + 6;
+                const lowTemp = baseTemp - rollDice("d8") - 4;
+                const tempAmplitude = (highTemp - lowTemp) / 2;
+                const tempMidpoint = (highTemp + lowTemp) / 2;
 
-                weatherState.high = Math.round(base + highAdj);
-                weatherState.low = Math.round(base - lowAdj);
-                weatherState.temp = Math.round((weatherState.high + weatherState.low) / 2);
+                weatherState.high = Math.round(highTemp);
+                weatherState.low = Math.round(lowTemp);
+                weatherState.temp = Math.round(tempMidpoint + tempAmplitude * Math.sin((timeOfDay * 2 * Math.PI) - Math.PI / 2));
 
+                // Generate New Weather
                 const skyDist = getSkyDistribution(dayOfYear);
                 weatherState.skyRoll = rollDice("d100");
                 weatherState.sky = getSkyCondition(weatherState.skyRoll, skyDist);
@@ -531,7 +542,7 @@
                 weatherState.hasPrecip = weatherState.precipRoll <= getPrecipChance(dayOfYear) && weatherState.sky === "Cloudy";
 
                 if (weatherState.hasPrecip) {
-                    const type = getPrecipitationType(base);
+                    const type = getPrecipitationType(baseTemp);
                     weatherState.precipType = type;
 
                     // Look up continuation value from type
@@ -995,10 +1006,7 @@
                     <td>
                         <div>
                             <img src="images/weather/thermometer.svg">
-                            <div>
-                                <div>${weatherState.high} ℉</div>
-                                <div>${weatherState.low} ℉</div>
-                            </div>
+                            <div>${weatherState.temp} ℉</div>
                         </div>
                     </td>
                     <td>
