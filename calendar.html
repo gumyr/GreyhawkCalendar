@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Greyhawk Calendar</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" href="favicon.png" type="image/png">
     <style>
         body {
             font-family: sans-serif;
@@ -758,12 +760,25 @@
             }
         ];
 
+        // const skyConditionImages = {
+        //     "Clear": "weather-sunny.svg",
+        //     "Partly Cloudy": "weather-partly-cloudy.svg",
+        //     "Cloudy": "weather-cloudy.svg"
+        // }
         const skyConditionImages = {
-            "Clear": "weather-sunny.svg",
-            "Partly Cloudy": "weather-partly-cloudy.svg",
-            "Cloudy": "weather-cloudy.svg"
-        }
-
+            "Clear": {
+                day: "weather-sunny.svg",
+                night: "moon-clear.svg"
+            },
+            "Partly Cloudy": {
+                day: "weather-partly-cloudy.svg",
+                night: "moon-cloud.svg"
+            },
+            "Cloudy": {
+                day: "weather-cloudy.svg",
+                night: "weather-cloudy.svg" // same all day
+            }
+        };
         const precipitationImages = {
             "Blizzard, heavy": "weather-snowy-heavy.svg",
             "Blizzard": "weather-snowy.svg",
@@ -1000,7 +1015,12 @@
             // Display Weather - Sunrise/Sunset
             updateWeather();
 
+            const currentHour = (currentDay % 1) * 24;
+            const isDaytime = currentHour >= sunrise && currentHour < sunset;
+            const skyIcon = skyConditionImages[weatherState.sky][isDaytime ? "day" : "night"];
+            console.log(skyIcon)
             document.getElementById('weekday-display').textContent = weekdayName;
+            // <img src="images/weather/${skyConditionImages[weatherState.sky]}">
             document.getElementById('weather-info').innerHTML = `
                 <tr class="weather-display-row">
                     <td>
@@ -1010,7 +1030,7 @@
                         </div>
                     </td>
                     <td>
-                        <img src="images/weather/${skyConditionImages[weatherState.sky]}">
+                        <img src="images/weather/${skyIcon}">
                         <div>${weatherState.sky}</div>
                     </td>
                     <td>
