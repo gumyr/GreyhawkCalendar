@@ -557,8 +557,9 @@
                     weatherState.windSpeed = rollDice("d10");
                 }
 
-                weatherState.timeToChangeWeather = currentTime + rollDice("d6") / 2; // 0.5–3 hours
+                weatherState.timeToChangeWeather = currentTime + rollDice("2d8") / 24; // ~9 hours
                 weatherState.lastUpdateTime = currentTime;
+                console.log(weatherState)
             }
         }
 
@@ -760,11 +761,6 @@
             }
         ];
 
-        // const skyConditionImages = {
-        //     "Clear": "weather-sunny.svg",
-        //     "Partly Cloudy": "weather-partly-cloudy.svg",
-        //     "Cloudy": "weather-cloudy.svg"
-        // }
         const skyConditionImages = {
             "Clear": {
                 day: "weather-sunny.svg",
@@ -1018,9 +1014,8 @@
             const currentHour = (currentDay % 1) * 24;
             const isDaytime = currentHour >= sunrise && currentHour < sunset;
             const skyIcon = skyConditionImages[weatherState.sky][isDaytime ? "day" : "night"];
-            console.log(skyIcon)
+
             document.getElementById('weekday-display').textContent = weekdayName;
-            // <img src="images/weather/${skyConditionImages[weatherState.sky]}">
             document.getElementById('weather-info').innerHTML = `
                 <tr class="weather-display-row">
                     <td>
