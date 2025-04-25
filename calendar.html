@@ -354,7 +354,7 @@
         }
 
         function rollDice(expression) {
-            const match = expression.match(/^(\d*)d(\d+)([+-]\d+)?$/);
+            const match = expression.match(/^(\d*)\s*d(\d+)\s*([+-]\s*\d+)?$/);
             if (!match) {
                 console.warn(`Invalid dice expression: ${expression}`);
                 return 0;
